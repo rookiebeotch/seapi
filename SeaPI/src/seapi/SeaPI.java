@@ -26,6 +26,7 @@ public class SeaPI {
         System.out.print("Hey Hello Florida!!");
         // create gpio controller
         final GpioController gpio = GpioFactory.getInstance();
+        
         // provision gpio pin #01 & #03 as an output pins and blink
         final GpioPinDigitalOutput led1 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_01);
         final GpioPinDigitalOutput led2 = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_03);
