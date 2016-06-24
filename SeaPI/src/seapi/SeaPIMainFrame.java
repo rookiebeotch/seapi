@@ -5,12 +5,21 @@
  */
 package seapi;
 
+import com.pi4j.component.servo.Servo;
+import com.pi4j.component.servo.impl.GenericServo;
+import com.pi4j.component.servo.impl.PCA9685GpioServoProvider;
+import com.pi4j.gpio.extension.pca.PCA9685GpioProvider;
+import com.pi4j.gpio.extension.pca.PCA9685Pin;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.RaspiPin;
+import com.pi4j.io.i2c.I2CBus;
+import com.pi4j.io.i2c.I2CFactory;
+import static java.lang.Thread.sleep;
+import java.math.BigDecimal;
 
 /**
  *
@@ -20,11 +29,21 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
 
     private GpioController  gpioCntrl;
     private SpiInterface    spiDevice;
+    private PWMController  pwmController;
+    private static final int   i2c_addr_pwm_controller1 =     0x40;
+    private static final int   rpi_i2c_bus_addr         =     I2CBus.BUS_1;
+    
+    private static final int    ERROR_CODE_SUCESS       =   0;
+    private static final int    ERROR_CODE_FAILURE      =   -1;
+    private static final int    ERROR_CODE_WARNING      =   1;
+    
+    private PCA9685GpioProvider gpioProvider;
     /**
      * Creates new form SeaPIMainFrame
      */
     public SeaPIMainFrame() {
         initComponents();
+        seaPiInit();
     }
 
     /**
@@ -37,30 +56,75 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private void initComponents() {
 
         jLabel1 = new javax.swing.JLabel();
+        jButton1 = new javax.swing.JButton();
+        jTextField1 = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         jLabel1.setText("This is the SeaPI Controller GUI");
 
+        jButton1.setText("jButton1");
+        jButton1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButton1MousePressed(evt);
+            }
+        });
+
+        jTextField1.setText("jTextField1");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap(132, Short.MAX_VALUE)
-                .addComponent(jLabel1)
-                .addGap(118, 118, 118))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(jLabel1)
+                        .addGap(118, 118, 118))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(65, 65, 65)
+                        .addComponent(jButton1)
+                        .addGap(35, 35, 35))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(58, 58, 58)
                 .addComponent(jLabel1)
-                .addContainerGap(228, Short.MAX_VALUE))
+                .addGap(79, 79, 79)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton1)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(126, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void jButton1MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton1MousePressed
+        // TODO add your handling code here:
+        //grab data
+        int value =0;
+        String val_txt = this.jTextField1.getText();
+        try{
+            value = Integer.parseInt(val_txt);
+            if(value>0 && value<10000)
+            {
+                
+                gpioProvider.setPwm(PCA9685Pin.PWM_04, value);//middle
+                gpioProvider.setPwm(PCA9685Pin.PWM_05, value);//middle
+                int onOffValues[] = gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
+               
+                System.out.print("\nPOS mid: "+String.valueOf(onOffValues[0])+" "+String.valueOf(onOffValues[1]));
+            }
+        }
+        catch(Exception e)
+        {
+            
+        }
+    }//GEN-LAST:event_jButton1MousePressed
 
     /**
      * @param args the command line arguments
@@ -96,24 +160,107 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
     }
-    public void seaPiInit()
+    public int seaPiInit()
     {
+        int     result = ERROR_CODE_SUCESS;
         // TODO code application logic here
         System.out.print("Starting SeaPI...");
-        spiDevice = new SpiInterface();
-        int result = spiDevice.InitDevice();
         
-        // create gpio controller
-        gpioCntrl = GpioFactory.getInstance();
+        //PMW Controller
+       try{       
+           System.out.print("Setup servo shit...");
+            
+            PCA9685GpioServoProvider gpioServoProvider;
+            gpioProvider = new PCA9685GpioProvider(I2CFactory.getInstance(I2CBus.BUS_1), 0x40,new BigDecimal("50"), new BigDecimal("1"));
+            GpioController gpio = GpioFactory.getInstance();
+            
+            //Set Pins
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_00, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_01, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_02, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_03, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_04, "Servo 1");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_05, "Servo 2");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_06, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_07, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_08, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_09, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_10, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_11, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_12, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_13, "not used");
+            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_14, "not used");
+            
+            
+            gpioServoProvider = new PCA9685GpioServoProvider(gpioProvider);
+            
+            //gpioProvider.reset();
+            
+            System.out.print("Default Freq is: "+gpioProvider.getFrequency().toString());
+            System.out.print("Digital Freq is: "+PCA9685GpioProvider.DIGITAL_SERVO_FREQUENCY.toString());
+               
+          
+            //2600 is far left
+            //1850 middle
+            //950  right
+            
+            
+            
+            
+            
+            
+            int u=0;
+            //move servo
+            while(u!=0)
+            {
+                //The value fed to setPWM is millisecon duration
+                System.out.print("MOVE!\n");
+            
+                gpioProvider.setPwm(PCA9685Pin.PWM_04, 1500);//middle
+                int[] onOffValues  =   gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
+                System.out.print("\nPOS mid: "+String.valueOf(onOffValues[0])+" "+String.valueOf(onOffValues[1]));
+                sleep(3000);
+                
+
+                  gpioProvider.setPwm(PCA9685Pin.PWM_04, 2100);//right 90
+                int[] onOffValues2  =   gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
+                System.out.print("\nPOS right: "+String.valueOf(onOffValues2[0])+" "+String.valueOf(onOffValues2[1]));
+                sleep(3000);
+                
+                
+
+                gpioProvider.setPwm(PCA9685Pin.PWM_04, 1000);//left 90
+                int[] onOffValues3  =   gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
+                System.out.print("\nPOS left: "+String.valueOf(onOffValues3[0])+" "+String.valueOf(onOffValues3[1]));
+                sleep(3000);
+            }
+            
+           //pwmController = new PWMController(I2CFactory.getInstance(rpi_i2c_bus_addr),i2c_addr_pwm_controller1);
+            
+            //set freq
+           // pwmController.setFreq(50);
+            //pwmController.setPWM4();
+            
+       }
+       catch(Exception e)
+       {
+           //serious error
+           
+           //TODO: Set an LED indicator for an error
+           result = ERROR_CODE_FAILURE;
+       }
         
-        // provision gpio pin #01 & #03 as an output pins and blink
-        final GpioPinDigitalOutput led1 = gpioCntrl.provisionDigitalOutputPin(RaspiPin.GPIO_01);
-        final GpioPinDigitalOutput led2 = gpioCntrl.provisionDigitalOutputPin(RaspiPin.GPIO_03);
-        // provision gpio pin #02 as an input pin with its internal pull down resistor enabled
-        final GpioPinDigitalInput myButton = gpioCntrl.provisionDigitalInputPin(RaspiPin.GPIO_02, PinPullResistance.PULL_DOWN);
+        
+        
+        
+        
+        
+        return result;
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 }
