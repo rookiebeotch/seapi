@@ -12,14 +12,18 @@ import com.pi4j.gpio.extension.pca.PCA9685GpioProvider;
 import com.pi4j.gpio.extension.pca.PCA9685Pin;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
+import com.pi4j.io.gpio.GpioPin;
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.RaspiPin;
 import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CFactory;
+import com.pi4j.wiringpi.Spi;
 import static java.lang.Thread.sleep;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  *
@@ -27,15 +31,21 @@ import java.math.BigDecimal;
  */
 public class SeaPIMainFrame extends javax.swing.JFrame {
 
-    private GpioController  gpioCntrl;
-    private SpiInterface    spiDevice;
-    private PWMController  pwmController;
-    private static final int   i2c_addr_pwm_controller1 =     0x40;
-    private static final int   rpi_i2c_bus_addr         =     I2CBus.BUS_1;
+    private GpioController      gpioCntrl;
+    private SpiInterface        spiDevice;
+    private PWMController       pwmController;
+    private static final int    I2C_ADDR_PWM_CONTROLLER1        =     0x40;
+    private static final int    SERVO_FREQUENCY                 =       50;
+    private static final int    SERVO_FREQUENCY_ADJUSTMENT      =       1;
+    private static final int    rpi_i2c_bus_addr         =     I2CBus.BUS_1;
     
     private static final int    ERROR_CODE_SUCESS       =   0;
     private static final int    ERROR_CODE_FAILURE      =   -1;
     private static final int    ERROR_CODE_WARNING      =   1;
+   
+    private byte                SPI_READ_CMD    = (byte)0x00;
+    private byte                SPI_WRITE_CMD   = (byte)0x80;
+    
     
     private PCA9685GpioProvider gpioProvider;
     /**
@@ -44,6 +54,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     public SeaPIMainFrame() {
         initComponents();
         seaPiInit();
+        spiTest();
     }
 
     /**
@@ -58,6 +69,10 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
         jTextField1 = new javax.swing.JTextField();
+        jButtonRFMReset = new javax.swing.JButton();
+        jButtonDumpRegisters = new javax.swing.JButton();
+        jTextFieldSPISpeed = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -72,21 +87,53 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
 
         jTextField1.setText("jTextField1");
 
+        jButtonRFMReset.setText("Reset RFM");
+        jButtonRFMReset.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonRFMResetMousePressed(evt);
+            }
+        });
+
+        jButtonDumpRegisters.setText("Dump Registers");
+        jButtonDumpRegisters.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonDumpRegistersMousePressed(evt);
+            }
+        });
+
+        jTextFieldSPISpeed.setText("10000000");
+
+        jLabel2.setText("SPI CLK SPEED");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap(132, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jLabel1)
-                        .addGap(118, 118, 118))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addComponent(jLabel1)
+                .addGap(118, 118, 118))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(65, 65, 65)
-                        .addComponent(jButton1)
-                        .addGap(35, 35, 35))))
+                        .addGap(65, 65, 65))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                .addGap(23, 23, 23)
+                                .addComponent(jTextFieldSPISpeed, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jButtonRFMReset))
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                .addGap(33, 33, 33)
+                                .addComponent(jLabel2)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jButton1)
+                    .addComponent(jButtonDumpRegisters))
+                .addGap(35, 35, 35))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -97,7 +144,14 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton1)
                     .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(126, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 67, Short.MAX_VALUE)
+                .addComponent(jLabel2)
+                .addGap(11, 11, 11)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButtonDumpRegisters)
+                    .addComponent(jTextFieldSPISpeed, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jButtonRFMReset))
+                .addContainerGap())
         );
 
         pack();
@@ -126,6 +180,79 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButton1MousePressed
 
+    private void jButtonRFMResetMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonRFMResetMousePressed
+        String spispeedstr = jTextFieldSPISpeed.getText();
+        int spi_speed;
+        try{
+            spi_speed   =   Integer.valueOf(spispeedstr);
+        }
+        catch(Exception e)
+        {
+            spi_speed = 1000000;//default
+            jTextFieldSPISpeed.setText("1000000");
+        }
+        int fd = Spi.wiringPiSPISetup(0, spi_speed);
+        if (fd <= -1) {
+            System.out.println(" ==>> SPI SETUP FAILED");
+            return;
+        }
+        else
+        {
+             System.out.println("SPI SETUP....OK!");
+        }
+
+        // TODO add your handling code here:
+        byte[] packet = new byte[2];
+        System.out.println("Sending reset command...");
+        packet[0]=(byte)(0x07|SPI_WRITE_CMD);
+        packet[1]=(byte)0x80;
+        System.out.println("Writing..."+String.valueOf((int)(0x00FF&packet[0]))+" "+String.valueOf((int)(0x00FF&packet[1])));
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+    }//GEN-LAST:event_jButtonRFMResetMousePressed
+
+    private void jButtonDumpRegistersMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonDumpRegistersMousePressed
+        byte[] packet = new byte[2];
+        System.out.println("Starting Register Dump");
+        System.out.println("----------------------");
+        for(byte i=0;i<0x50;i++)
+        {
+            packet[0] = (byte) ((byte)i|SPI_READ_CMD);
+            packet[1] = (byte)0x00;
+            System.out.print("Register "+Short.toString(packet[0]));
+            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+            System.out.print(" is: "+String.valueOf(packet[0])+" "+String.valueOf(packet[1]));//valueof
+            System.out.println(" is: "+Short.toString(packet[0])+" "+Short.toString(packet[1]));//short
+            
+        }
+    }//GEN-LAST:event_jButtonDumpRegistersMousePressed
+    public void spiTest()
+    {
+         // setup SPI for communication
+        int fd = Spi.wiringPiSPISetup(0, 1000000);
+        if (fd <= -1) {
+            System.out.println(" ==>> SPI SETUP FAILED");
+            return;
+        }
+        else
+        {
+             System.out.println("SPI SETUP....OK!");
+        }
+        
+        
+       
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    }
     /**
      * @param args the command line arguments
      */
@@ -168,10 +295,14 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         //PMW Controller
        try{       
-           System.out.print("Setup servo shit...");
+            System.out.print("Configuring PWM Controller...");
             
-            PCA9685GpioServoProvider gpioServoProvider;
-            gpioProvider = new PCA9685GpioProvider(I2CFactory.getInstance(I2CBus.BUS_1), 0x40,new BigDecimal("50"), new BigDecimal("1"));
+            
+            gpioProvider = new PCA9685GpioProvider(I2CFactory.getInstance(I2CBus.BUS_1), I2C_ADDR_PWM_CONTROLLER1,new BigDecimal(SERVO_FREQUENCY), new BigDecimal(SERVO_FREQUENCY_ADJUSTMENT));
+            if(gpioProvider == null)
+            {
+                System.out.print("Failure: Unable to connect to PWM Controller...\n");
+            }
             GpioController gpio = GpioFactory.getInstance();
             
             //Set Pins
@@ -192,17 +323,23 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_14, "not used");
             
             
-            gpioServoProvider = new PCA9685GpioServoProvider(gpioProvider);
+            
             
             //gpioProvider.reset();
-            
-            System.out.print("Default Freq is: "+gpioProvider.getFrequency().toString());
-            System.out.print("Digital Freq is: "+PCA9685GpioProvider.DIGITAL_SERVO_FREQUENCY.toString());
-               
+            System.out.print("**************************\n");
+            System.out.printf("System Configuration Summary\n");
+            System.out.print("Frequency is: "+gpioProvider.getFrequency().toString()+"\n");
+            Collection<GpioPin> pinCollection;
+            pinCollection = gpio.getProvisionedPins();
+            for(int i=0;i<pinCollection.size();i++)
+            {
+                
+            }
           
             //2600 is far left
             //1850 middle
             //950  right
+            
             
             
             
@@ -260,7 +397,11 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButtonDumpRegisters;
+    private javax.swing.JButton jButtonRFMReset;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextFieldSPISpeed;
     // End of variables declaration//GEN-END:variables
 }
