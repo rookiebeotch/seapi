@@ -19,11 +19,15 @@ import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.RaspiPin;
 import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CFactory;
+import com.pi4j.io.spi.SpiChannel;
+import com.pi4j.io.spi.SpiDevice;
+import com.pi4j.io.spi.SpiFactory;
 import com.pi4j.wiringpi.Spi;
 import static java.lang.Thread.sleep;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -73,19 +77,36 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         jButtonDumpRegisters = new javax.swing.JButton();
         jTextFieldSPISpeed = new javax.swing.JTextField();
         jLabel2 = new javax.swing.JLabel();
+        jButton2 = new javax.swing.JButton();
+        jTextFieldPktDataTx = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
+        jButtonPushPacket = new javax.swing.JButton();
+        jTextFieldPktDataRx = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        jButtonGetPacket = new javax.swing.JButton();
+        jLabel5 = new javax.swing.JLabel();
+        jTextFieldRegAddr = new javax.swing.JTextField();
+        jLabel6 = new javax.swing.JLabel();
+        jLabel7 = new javax.swing.JLabel();
+        jTextFieldRegVal = new javax.swing.JTextField();
+        jButton3 = new javax.swing.JButton();
+        jTextFieldRSSI = new javax.swing.JTextField();
+        jLabel8 = new javax.swing.JLabel();
+        jButtonGetRssi = new javax.swing.JButton();
+        jButtonSendPkt = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         jLabel1.setText("This is the SeaPI Controller GUI");
 
-        jButton1.setText("jButton1");
+        jButton1.setText("move servo");
         jButton1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
                 jButton1MousePressed(evt);
             }
         });
 
-        jTextField1.setText("jTextField1");
+        jTextField1.setText("1000");
 
         jButtonRFMReset.setText("Reset RFM");
         jButtonRFMReset.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -101,50 +122,201 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
 
-        jTextFieldSPISpeed.setText("10000000");
+        jTextFieldSPISpeed.setText("1000000");
 
         jLabel2.setText("SPI CLK SPEED");
+
+        jButton2.setText("Init RFM");
+        jButton2.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButton2MousePressed(evt);
+            }
+        });
+
+        jTextFieldPktDataTx.setText("hello world");
+        jTextFieldPktDataTx.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextFieldPktDataTxActionPerformed(evt);
+            }
+        });
+
+        jLabel3.setText("TX Packet Data");
+
+        jButtonPushPacket.setText("Push Packet");
+        jButtonPushPacket.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonPushPacketMousePressed(evt);
+            }
+        });
+
+        jTextFieldPktDataRx.setText("hello world");
+        jTextFieldPktDataRx.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextFieldPktDataRxActionPerformed(evt);
+            }
+        });
+
+        jLabel4.setText("RX Packet Data");
+
+        jButtonGetPacket.setText("Get Pkt");
+        jButtonGetPacket.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonGetPacketMousePressed(evt);
+            }
+        });
+
+        jLabel5.setText("EXCEL Sheet");
+
+        jTextFieldRegAddr.setText("01");
+
+        jLabel6.setText("Reg Addr");
+
+        jLabel7.setText("Reg Val");
+
+        jTextFieldRegVal.setText("00");
+
+        jButton3.setText("Set Reg");
+        jButton3.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButton3MousePressed(evt);
+            }
+        });
+
+        jTextFieldRSSI.setText("0");
+
+        jLabel8.setText("RSSI");
+
+        jButtonGetRssi.setText("Get RSSI");
+        jButtonGetRssi.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonGetRssiMousePressed(evt);
+            }
+        });
+
+        jButtonSendPkt.setText("Send Pkt");
+        jButtonSendPkt.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonSendPktMousePressed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap(132, Short.MAX_VALUE)
-                .addComponent(jLabel1)
-                .addGap(118, 118, 118))
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jButton1)
+                        .addGap(166, 166, 166)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jButton2)
+                                .addGap(18, 18, 18)
+                                .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(jTextFieldRegAddr, javax.swing.GroupLayout.DEFAULT_SIZE, 43, Short.MAX_VALUE)
+                                    .addComponent(jTextFieldRegVal))
+                                .addGap(18, 18, 18)
+                                .addComponent(jButton3)))
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(jLabel1)
+                        .addGap(121, 121, 121))))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(65, 65, 65))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                .addGap(33, 33, 33)
+                                .addComponent(jLabel2))
                             .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
                                 .addGap(23, 23, 23)
                                 .addComponent(jTextFieldSPISpeed, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jButtonRFMReset))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                .addGap(33, 33, 33)
-                                .addComponent(jLabel2)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton1)
-                    .addComponent(jButtonDumpRegisters))
+                                .addComponent(jButtonRFMReset)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 233, Short.MAX_VALUE)
+                        .addComponent(jButtonDumpRegisters))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(jTextFieldPktDataTx, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(jButtonPushPacket))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(2, 2, 2)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jTextFieldPktDataRx, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jTextFieldRSSI, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jButtonGetPacket, javax.swing.GroupLayout.PREFERRED_SIZE, 75, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButtonGetRssi)
+                            .addComponent(jButtonSendPkt))
+                        .addGap(16, 16, 16)))
                 .addGap(35, 35, 35))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(58, 58, 58)
+                .addContainerGap()
                 .addComponent(jLabel1)
-                .addGap(79, 79, 79)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(40, 40, 40)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton1))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel7)
+                            .addComponent(jTextFieldRegVal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jButton2)
+                            .addComponent(jLabel5))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(jTextFieldRegAddr, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel6)))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(23, 23, 23)
+                                .addComponent(jButton3)))))
+                .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton1)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 67, Short.MAX_VALUE)
+                    .addComponent(jTextFieldPktDataTx, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3)
+                    .addComponent(jButtonPushPacket)
+                    .addComponent(jButtonSendPkt))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextFieldPktDataRx, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel4)
+                    .addComponent(jButtonGetPacket))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jTextFieldRSSI, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel8)
+                    .addComponent(jButtonGetRssi))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jLabel2)
                 .addGap(11, 11, 11)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -214,17 +386,346 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         byte[] packet = new byte[2];
         System.out.println("Starting Register Dump");
         System.out.println("----------------------");
-        for(byte i=0;i<0x50;i++)
+        for(long i=0;i<0x80;i++)
         {
-            packet[0] = (byte) ((byte)i|SPI_READ_CMD);
-            packet[1] = (byte)0x00;
-            System.out.print("Register "+Short.toString(packet[0]));
-            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-            System.out.print(" is: "+String.valueOf(packet[0])+" "+String.valueOf(packet[1]));//valueof
-            System.out.println(" is: "+Short.toString(packet[0])+" "+Short.toString(packet[1]));//short
-            
+            if(i!=0x7f)
+            {
+                packet[0] = (byte) ((byte)i|SPI_READ_CMD);
+                packet[1] = (byte)0x00;
+                System.out.print("Register "+(0xff&packet[0]));
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+                //System.out.print(" is: "+" "+String.valueOf((byte)(packet[1]&0x00FF)));//valueof
+                System.out.println(" is: "+" "+(0xff&packet[1]));//short
+            }
+            else
+            {
+             //dumping rcv
+                byte[] packetfifo = new byte[65];
+                for(int x=0;x<65;x++)packetfifo[x]=0x00;
+                
+                packet[0] = (byte) ((byte)i|SPI_READ_CMD);
+                System.out.print("Register "+(0xff&packet[0]));
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packetfifo,65);
+                for(int x=0;x<65;x++)
+                    System.out.print(packetfifo[x]+" ");
+                
+                System.out.println();
+            }
         }
     }//GEN-LAST:event_jButtonDumpRegistersMousePressed
+
+    private void jButton2MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton2MousePressed
+        // TODO add your handling code here:
+        initRFMBRegisters();
+    }//GEN-LAST:event_jButton2MousePressed
+
+    private void jTextFieldPktDataTxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextFieldPktDataTxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextFieldPktDataTxActionPerformed
+
+    private void jButtonPushPacketMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonPushPacketMousePressed
+        String tx_payload = jTextFieldPktDataTx.getText();
+        byte payloadbytes[] = tx_payload.getBytes();
+        
+        SpiDevice spiDev;
+        try{
+            
+            spiDev = SpiFactory.getInstance(SpiChannel.CS0,
+                                     SpiDevice.DEFAULT_SPI_SPEED, // default spi speed 1 MHz
+                                     SpiDevice.DEFAULT_SPI_MODE); // default spi mode 0
+            
+            byte spiPacket[] = new byte[61];
+            for(int i=1;i<61;i++)
+                spiPacket[i]=(byte)0x39;
+            
+            spiPacket[0] = (byte)0xFF;
+            
+            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,spiPacket,61);
+            //spiDev.write(spiPacket, 0, 61);
+            
+            
+            
+            
+            
+           
+        }
+        catch(Exception e)
+        {
+            
+        }
+       
+        
+       
+        
+    }//GEN-LAST:event_jButtonPushPacketMousePressed
+
+    private void jButton3MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton3MousePressed
+        //set reg value
+        String addr = jTextFieldRegAddr.getText();
+        String val = jTextFieldRegVal.getText();
+        byte packet[] = new byte[2];
+        try{
+            packet[0] = (byte)((byte)SPI_WRITE_CMD | Byte.parseByte(addr));
+            packet[1] = Byte.parseByte(val);
+            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        }
+        catch(Exception e)
+        {
+            
+        }
+    }//GEN-LAST:event_jButton3MousePressed
+
+    private void jButtonGetRssiMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonGetRssiMousePressed
+        // TODO add your handling code here:
+        try 
+        {
+            jTextFieldRSSI.setText(String.valueOf(this.getRssi()));
+            
+        }
+        catch(Exception e)
+        {
+            JOptionPane.showMessageDialog(null,"ERRRRRR");
+        }
+    }//GEN-LAST:event_jButtonGetRssiMousePressed
+
+    private void jButtonSendPktMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonSendPktMousePressed
+        // TODO add your handling code here:
+         //send packet
+            //reg 0x07  to 0x09
+           //spiPacket = new byte[2];
+           //spiPacket[0] =  (byte)((byte)0x80|(byte)0x07);
+           //spiPacket[1] = (byte)0x09;
+           //spiDev.write(spiPacket,0,2);
+           
+            byte packet[] = new byte[2];
+            packet[0] = (byte)(0x87);
+            packet[1] = (byte)0x09;
+            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+    }//GEN-LAST:event_jButtonSendPktMousePressed
+
+    private void jTextFieldPktDataRxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextFieldPktDataRxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextFieldPktDataRxActionPerformed
+
+    private void jButtonGetPacketMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonGetPacketMousePressed
+        // TODO add your handling code here:
+        
+        //enter rx mode
+            byte packet[] = new byte[2];
+            packet[0] = (byte)(0x87);
+            packet[1] = (byte)0x07;
+            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+            System.out.println("Entering RX Mode...");
+    }//GEN-LAST:event_jButtonGetPacketMousePressed
+    public void initRFMBRegisters()
+    {
+        byte[] packet = new byte[2];
+        //1C	9A
+        packet[0]   =   (byte)(0x1C|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x9A;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //1D	40
+        packet[0]   =   (byte)(0x1D|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x40;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //20	3C
+        packet[0]   =   (byte)(0x20|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x3C;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //21	02
+        packet[0]   =   (byte)(0x21|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x02;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //22	22
+        packet[0]   =   (byte)(0x22|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x22;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //23	22
+        packet[0]   =   (byte)(0x23|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x22;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //24	07
+        packet[0]   =   (byte)(0x24|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x07;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //25	FF
+        packet[0]   =   (byte)(0x25|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0xFF;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //2A	48
+        packet[0]   =   (byte)(0x2A|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x48;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //2C	28
+        packet[0]   =   (byte)(0x2C|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x28;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //2D	0C
+        packet[0]   =   (byte)(0x2D|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x0C;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //2E	28
+        packet[0]   =   (byte)(0x2E|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x28;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        // 30	CC
+        packet[0]   =   (byte)(0x30|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0xCC;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //32	00
+        packet[0]   =   (byte)(0x32|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //33	02
+        packet[0]   =   (byte)(0x33|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x02;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //34	08
+        packet[0]   =   (byte)(0x34|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x08;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //35	22
+        packet[0]   =   (byte)(0x35|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x22;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //36	2D
+        packet[0]   =   (byte)(0x36|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x2D;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //37	D4
+        packet[0]   =   (byte)(0x37|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0xD4;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //38	00
+        packet[0]   =   (byte)(0x38|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //39	00
+        packet[0]   =   (byte)(0x39|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //3A	00
+        packet[0]   =   (byte)(0x3A|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //3B	00
+        packet[0]   =   (byte)(0x3B|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //3C	00
+        packet[0]   =   (byte)(0x3C|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //3D	00
+        packet[0]   =   (byte)(0x3D|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //3E	3c
+        packet[0]   =   (byte)(0x3E|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x3c;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //3F	00
+        packet[0]   =   (byte)(0x3F|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //40	00
+        packet[0]   =   (byte)(0x40|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //41	00
+        packet[0]   =   (byte)(0x41|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //42	00
+        packet[0]   =   (byte)(0x42|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //43	FF
+        packet[0]   =   (byte)(0x43|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0xFF;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //44	FF
+        packet[0]   =   (byte)(0x44|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0xFF;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //45	FF
+        packet[0]   =   (byte)(0x45|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0xFF;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //46	FF
+        packet[0]   =   (byte)(0x46|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0xFF;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+
+
+        //6E	19
+        packet[0]   =   (byte)(0x6E|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x19;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //6F	9A
+        packet[0]   =   (byte)(0x6F|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x9A;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+
+        //70	0C
+        packet[0]   =   (byte)(0x70|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x0C;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //71	23
+        packet[0]   =   (byte)(0x71|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x23;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //72	50
+        packet[0]   =   (byte)(0x72|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x50;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+
+        //75	53
+        packet[0]   =   (byte)(0x75|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x53;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //76	64
+        packet[0]   =   (byte)(0x76|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x64;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //77	00
+        packet[0]   =   (byte)(0x77|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        
+        //05 ff
+        packet[0]   =   (byte)(0x05|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0xff;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        //06 ff
+        packet[0]   =   (byte)(0x05|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0xff;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        //07 03
+        packet[0]   =   (byte)(0x07|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x03;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        //08 08
+        packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x08;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+    }
+    public int getRssi()
+    {
+        int rssi = 0;
+        byte[] packet = new byte[2];
+        packet[0]   =   (byte)0x26;
+        packet[1]   =   (byte)0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, packet,2);
+        rssi = (int)packet[1];
+               
+        
+        return rssi;
+    }
     public void spiTest()
     {
          // setup SPI for communication
@@ -397,11 +898,28 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
     private javax.swing.JButton jButtonDumpRegisters;
+    private javax.swing.JButton jButtonGetPacket;
+    private javax.swing.JButton jButtonGetRssi;
+    private javax.swing.JButton jButtonPushPacket;
     private javax.swing.JButton jButtonRFMReset;
+    private javax.swing.JButton jButtonSendPkt;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextFieldPktDataRx;
+    private javax.swing.JTextField jTextFieldPktDataTx;
+    private javax.swing.JTextField jTextFieldRSSI;
+    private javax.swing.JTextField jTextFieldRegAddr;
+    private javax.swing.JTextField jTextFieldRegVal;
     private javax.swing.JTextField jTextFieldSPISpeed;
     // End of variables declaration//GEN-END:variables
 }
