@@ -23,6 +23,7 @@ import com.pi4j.io.spi.SpiChannel;
 import com.pi4j.io.spi.SpiDevice;
 import com.pi4j.io.spi.SpiFactory;
 import com.pi4j.wiringpi.Spi;
+import static java.lang.Math.round;
 import static java.lang.Thread.sleep;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -73,10 +74,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
         jTextField1 = new javax.swing.JTextField();
-        jButtonRFMReset = new javax.swing.JButton();
         jButtonDumpRegisters = new javax.swing.JButton();
-        jTextFieldSPISpeed = new javax.swing.JTextField();
-        jLabel2 = new javax.swing.JLabel();
         jButton2 = new javax.swing.JButton();
         jTextFieldPktDataTx = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
@@ -94,10 +92,16 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         jLabel8 = new javax.swing.JLabel();
         jButtonGetRssi = new javax.swing.JButton();
         jButtonSendPkt = new javax.swing.JButton();
+        jLabel2 = new javax.swing.JLabel();
+        jTextFieldFreq = new javax.swing.JTextField();
+        jButtonSetFreq = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        getContentPane().setLayout(null);
 
         jLabel1.setText("This is the SeaPI Controller GUI");
+        getContentPane().add(jLabel1);
+        jLabel1.setBounds(210, 10, 175, 17);
 
         jButton1.setText("move servo");
         jButton1.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -105,15 +109,12 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 jButton1MousePressed(evt);
             }
         });
+        getContentPane().add(jButton1);
+        jButton1.setBounds(67, 69, 77, 31);
 
         jTextField1.setText("1000");
-
-        jButtonRFMReset.setText("Reset RFM");
-        jButtonRFMReset.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mousePressed(java.awt.event.MouseEvent evt) {
-                jButtonRFMResetMousePressed(evt);
-            }
-        });
+        getContentPane().add(jTextField1);
+        jTextField1.setBounds(12, 71, 43, 27);
 
         jButtonDumpRegisters.setText("Dump Registers");
         jButtonDumpRegisters.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -121,10 +122,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 jButtonDumpRegistersMousePressed(evt);
             }
         });
-
-        jTextFieldSPISpeed.setText("1000000");
-
-        jLabel2.setText("SPI CLK SPEED");
+        getContentPane().add(jButtonDumpRegisters);
+        jButtonDumpRegisters.setBounds(446, 308, 101, 31);
 
         jButton2.setText("Init RFM");
         jButton2.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -132,6 +131,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 jButton2MousePressed(evt);
             }
         });
+        getContentPane().add(jButton2);
+        jButton2.setBounds(310, 47, 57, 31);
 
         jTextFieldPktDataTx.setText("hello world");
         jTextFieldPktDataTx.addActionListener(new java.awt.event.ActionListener() {
@@ -139,8 +140,12 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 jTextFieldPktDataTxActionPerformed(evt);
             }
         });
+        getContentPane().add(jTextFieldPktDataTx);
+        jTextFieldPktDataTx.setBounds(241, 153, 100, 27);
 
         jLabel3.setText("TX Packet Data");
+        getContentPane().add(jLabel3);
+        jLabel3.setBounds(129, 158, 94, 17);
 
         jButtonPushPacket.setText("Push Packet");
         jButtonPushPacket.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -148,6 +153,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 jButtonPushPacketMousePressed(evt);
             }
         });
+        getContentPane().add(jButtonPushPacket);
+        jButtonPushPacket.setBounds(359, 151, 79, 31);
 
         jTextFieldPktDataRx.setText("hello world");
         jTextFieldPktDataRx.addActionListener(new java.awt.event.ActionListener() {
@@ -155,8 +162,12 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 jTextFieldPktDataRxActionPerformed(evt);
             }
         });
+        getContentPane().add(jTextFieldPktDataRx);
+        jTextFieldPktDataRx.setBounds(338, 196, 100, 27);
 
         jLabel4.setText("RX Packet Data");
+        getContentPane().add(jLabel4);
+        jLabel4.setBounds(243, 201, 93, 17);
 
         jButtonGetPacket.setText("Get Pkt");
         jButtonGetPacket.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -164,16 +175,28 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 jButtonGetPacketMousePressed(evt);
             }
         });
+        getContentPane().add(jButtonGetPacket);
+        jButtonGetPacket.setBounds(456, 194, 75, 31);
 
         jLabel5.setText("EXCEL Sheet");
+        getContentPane().add(jLabel5);
+        jLabel5.setBounds(385, 54, 70, 17);
 
         jTextFieldRegAddr.setText("01");
+        getContentPane().add(jTextFieldRegAddr);
+        jTextFieldRegAddr.setBounds(388, 90, 43, 27);
 
         jLabel6.setText("Reg Addr");
+        getContentPane().add(jLabel6);
+        jLabel6.setBounds(310, 95, 60, 17);
 
         jLabel7.setText("Reg Val");
+        getContentPane().add(jLabel7);
+        jLabel7.setBounds(310, 120, 52, 17);
 
         jTextFieldRegVal.setText("00");
+        getContentPane().add(jTextFieldRegVal);
+        jTextFieldRegVal.setBounds(390, 120, 43, 27);
 
         jButton3.setText("Set Reg");
         jButton3.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -181,10 +204,16 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 jButton3MousePressed(evt);
             }
         });
+        getContentPane().add(jButton3);
+        jButton3.setBounds(449, 101, 54, 31);
 
         jTextFieldRSSI.setText("0");
+        getContentPane().add(jTextFieldRSSI);
+        jTextFieldRSSI.setBounds(338, 245, 50, 27);
 
         jLabel8.setText("RSSI");
+        getContentPane().add(jLabel8);
+        jLabel8.setBounds(243, 250, 67, 17);
 
         jButtonGetRssi.setText("Get RSSI");
         jButtonGetRssi.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -192,6 +221,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 jButtonGetRssiMousePressed(evt);
             }
         });
+        getContentPane().add(jButtonGetRssi);
+        jButtonGetRssi.setBounds(456, 243, 60, 31);
 
         jButtonSendPkt.setText("Send Pkt");
         jButtonSendPkt.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -199,132 +230,25 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 jButtonSendPktMousePressed(evt);
             }
         });
+        getContentPane().add(jButtonSendPkt);
+        jButtonSendPkt.setBounds(456, 151, 60, 31);
 
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jButton1)
-                        .addGap(166, 166, 166)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jButton2)
-                                .addGap(18, 18, 18)
-                                .addComponent(jLabel5, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel7, javax.swing.GroupLayout.PREFERRED_SIZE, 52, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(18, 18, 18)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addComponent(jTextFieldRegAddr, javax.swing.GroupLayout.DEFAULT_SIZE, 43, Short.MAX_VALUE)
-                                    .addComponent(jTextFieldRegVal))
-                                .addGap(18, 18, 18)
-                                .addComponent(jButton3)))
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(jLabel1)
-                        .addGap(121, 121, 121))))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                .addGap(33, 33, 33)
-                                .addComponent(jLabel2))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                .addGap(23, 23, 23)
-                                .addComponent(jTextFieldSPISpeed, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jButtonRFMReset)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 233, Short.MAX_VALUE)
-                        .addComponent(jButtonDumpRegisters))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addComponent(jTextFieldPktDataTx, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addComponent(jButtonPushPacket))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 93, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel8, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(2, 2, 2)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jTextFieldPktDataRx, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jTextFieldRSSI, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jButtonGetPacket, javax.swing.GroupLayout.PREFERRED_SIZE, 75, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButtonGetRssi)
-                            .addComponent(jButtonSendPkt))
-                        .addGap(16, 16, 16)))
-                .addGap(35, 35, 35))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jLabel1)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(40, 40, 40)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButton1))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel7)
-                            .addComponent(jTextFieldRegVal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButton2)
-                            .addComponent(jLabel5))
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jTextFieldRegAddr, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel6)))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(23, 23, 23)
-                                .addComponent(jButton3)))))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextFieldPktDataTx, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel3)
-                    .addComponent(jButtonPushPacket)
-                    .addComponent(jButtonSendPkt))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextFieldPktDataRx, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel4)
-                    .addComponent(jButtonGetPacket))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jTextFieldRSSI, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel8)
-                    .addComponent(jButtonGetRssi))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jLabel2)
-                .addGap(11, 11, 11)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButtonDumpRegisters)
-                    .addComponent(jTextFieldSPISpeed, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButtonRFMReset))
-                .addContainerGap())
-        );
+        jLabel2.setText("Set Frequency");
+        getContentPane().add(jLabel2);
+        jLabel2.setBounds(12, 221, 79, 17);
+
+        jTextFieldFreq.setText("433");
+        getContentPane().add(jTextFieldFreq);
+        jTextFieldFreq.setBounds(20, 240, 70, 27);
+
+        jButtonSetFreq.setText("Set Freq");
+        jButtonSetFreq.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonSetFreqMousePressed(evt);
+            }
+        });
+        getContentPane().add(jButtonSetFreq);
+        jButtonSetFreq.setBounds(10, 280, 80, 31);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -351,36 +275,6 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             
         }
     }//GEN-LAST:event_jButton1MousePressed
-
-    private void jButtonRFMResetMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonRFMResetMousePressed
-        String spispeedstr = jTextFieldSPISpeed.getText();
-        int spi_speed;
-        try{
-            spi_speed   =   Integer.valueOf(spispeedstr);
-        }
-        catch(Exception e)
-        {
-            spi_speed = 1000000;//default
-            jTextFieldSPISpeed.setText("1000000");
-        }
-        int fd = Spi.wiringPiSPISetup(0, spi_speed);
-        if (fd <= -1) {
-            System.out.println(" ==>> SPI SETUP FAILED");
-            return;
-        }
-        else
-        {
-             System.out.println("SPI SETUP....OK!");
-        }
-
-        // TODO add your handling code here:
-        byte[] packet = new byte[2];
-        System.out.println("Sending reset command...");
-        packet[0]=(byte)(0x07|SPI_WRITE_CMD);
-        packet[1]=(byte)0x80;
-        System.out.println("Writing..."+String.valueOf((int)(0x00FF&packet[0]))+" "+String.valueOf((int)(0x00FF&packet[1])));
-        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-    }//GEN-LAST:event_jButtonRFMResetMousePressed
 
     private void jButtonDumpRegistersMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonDumpRegistersMousePressed
         byte[] packet = new byte[2];
@@ -517,6 +411,39 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
             System.out.println("Entering RX Mode...");
     }//GEN-LAST:event_jButtonGetPacketMousePressed
+
+    private void jButtonSetFreqMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonSetFreqMousePressed
+        // TODO add your handling code here:
+        float freq;
+        int hbsel   =   0;
+        int fb      =   0;
+        int fc      =   0;
+        try{
+            freq = Float.valueOf(jTextFieldFreq.getText());
+            //convert freq to register settings
+            ////413 to 453
+            if(freq>=413 && freq<=453)
+            {
+                if(freq>480)
+                    hbsel=1;
+                //fb
+                fb = (int)((freq/(10*(1+hbsel)))-24);
+                fc = round(((freq/(10*(1+hbsel)))%1)*64000);
+                
+                byte packet[] = new byte[2];
+                packet[0] = 0x00;
+                
+                
+            }
+            
+        }
+        catch(Exception e)
+        {
+            //invalid conversion
+        }
+    }//GEN-LAST:event_jButtonSetFreqMousePressed
+   
+    
     public void initRFMBRegisters()
     {
         byte[] packet = new byte[2];
@@ -904,8 +831,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private javax.swing.JButton jButtonGetPacket;
     private javax.swing.JButton jButtonGetRssi;
     private javax.swing.JButton jButtonPushPacket;
-    private javax.swing.JButton jButtonRFMReset;
     private javax.swing.JButton jButtonSendPkt;
+    private javax.swing.JButton jButtonSetFreq;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -915,11 +842,11 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextFieldFreq;
     private javax.swing.JTextField jTextFieldPktDataRx;
     private javax.swing.JTextField jTextFieldPktDataTx;
     private javax.swing.JTextField jTextFieldRSSI;
     private javax.swing.JTextField jTextFieldRegAddr;
     private javax.swing.JTextField jTextFieldRegVal;
-    private javax.swing.JTextField jTextFieldSPISpeed;
     // End of variables declaration//GEN-END:variables
 }
