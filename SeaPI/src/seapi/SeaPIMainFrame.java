@@ -82,12 +82,11 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         jTextFieldPktDataRx = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
         jButtonGetPacket = new javax.swing.JButton();
-        jLabel5 = new javax.swing.JLabel();
         jTextFieldRegAddr = new javax.swing.JTextField();
         jLabel6 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
         jTextFieldRegVal = new javax.swing.JTextField();
-        jButton3 = new javax.swing.JButton();
+        jButtonSetReg = new javax.swing.JButton();
         jTextFieldRSSI = new javax.swing.JTextField();
         jLabel8 = new javax.swing.JLabel();
         jButtonGetRssi = new javax.swing.JButton();
@@ -95,8 +94,14 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         jLabel2 = new javax.swing.JLabel();
         jTextFieldFreq = new javax.swing.JTextField();
         jButtonSetFreq = new javax.swing.JButton();
+        jLabel9 = new javax.swing.JLabel();
+        jLabel10 = new javax.swing.JLabel();
+        jTextFieldValidPkt = new javax.swing.JTextField();
+        jTextFieldPktLength = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setMinimumSize(new java.awt.Dimension(500, 350));
+        setSize(new java.awt.Dimension(580, 350));
         getContentPane().setLayout(null);
 
         jLabel1.setText("This is the SeaPI Controller GUI");
@@ -110,11 +115,11 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButton1);
-        jButton1.setBounds(67, 69, 77, 31);
+        jButton1.setBounds(70, 40, 77, 31);
 
         jTextField1.setText("1000");
         getContentPane().add(jTextField1);
-        jTextField1.setBounds(12, 71, 43, 27);
+        jTextField1.setBounds(10, 40, 43, 27);
 
         jButtonDumpRegisters.setText("Dump Registers");
         jButtonDumpRegisters.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -123,7 +128,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButtonDumpRegisters);
-        jButtonDumpRegisters.setBounds(446, 308, 101, 31);
+        jButtonDumpRegisters.setBounds(460, 270, 101, 31);
 
         jButton2.setText("Init RFM");
         jButton2.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -132,7 +137,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButton2);
-        jButton2.setBounds(310, 47, 57, 31);
+        jButton2.setBounds(200, 40, 80, 31);
 
         jTextFieldPktDataTx.setText("hello world");
         jTextFieldPktDataTx.addActionListener(new java.awt.event.ActionListener() {
@@ -163,11 +168,11 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jTextFieldPktDataRx);
-        jTextFieldPktDataRx.setBounds(338, 196, 100, 27);
+        jTextFieldPktDataRx.setBounds(240, 190, 150, 27);
 
         jLabel4.setText("RX Packet Data");
         getContentPane().add(jLabel4);
-        jLabel4.setBounds(243, 201, 93, 17);
+        jLabel4.setBounds(130, 200, 93, 17);
 
         jButtonGetPacket.setText("Get Pkt");
         jButtonGetPacket.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -176,44 +181,40 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButtonGetPacket);
-        jButtonGetPacket.setBounds(456, 194, 75, 31);
-
-        jLabel5.setText("EXCEL Sheet");
-        getContentPane().add(jLabel5);
-        jLabel5.setBounds(385, 54, 70, 17);
+        jButtonGetPacket.setBounds(410, 190, 75, 31);
 
         jTextFieldRegAddr.setText("01");
         getContentPane().add(jTextFieldRegAddr);
-        jTextFieldRegAddr.setBounds(388, 90, 43, 27);
+        jTextFieldRegAddr.setBounds(400, 50, 43, 27);
 
         jLabel6.setText("Reg Addr");
         getContentPane().add(jLabel6);
-        jLabel6.setBounds(310, 95, 60, 17);
+        jLabel6.setBounds(330, 50, 60, 17);
 
         jLabel7.setText("Reg Val");
         getContentPane().add(jLabel7);
-        jLabel7.setBounds(310, 120, 52, 17);
+        jLabel7.setBounds(330, 80, 52, 17);
 
         jTextFieldRegVal.setText("00");
         getContentPane().add(jTextFieldRegVal);
-        jTextFieldRegVal.setBounds(390, 120, 43, 27);
+        jTextFieldRegVal.setBounds(400, 80, 43, 27);
 
-        jButton3.setText("Set Reg");
-        jButton3.addMouseListener(new java.awt.event.MouseAdapter() {
+        jButtonSetReg.setText("Set Reg");
+        jButtonSetReg.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
-                jButton3MousePressed(evt);
+                jButtonSetRegMousePressed(evt);
             }
         });
-        getContentPane().add(jButton3);
-        jButton3.setBounds(449, 101, 54, 31);
+        getContentPane().add(jButtonSetReg);
+        jButtonSetReg.setBounds(450, 50, 80, 31);
 
         jTextFieldRSSI.setText("0");
         getContentPane().add(jTextFieldRSSI);
-        jTextFieldRSSI.setBounds(338, 245, 50, 27);
+        jTextFieldRSSI.setBounds(240, 350, 50, 27);
 
         jLabel8.setText("RSSI");
         getContentPane().add(jLabel8);
-        jLabel8.setBounds(243, 250, 67, 17);
+        jLabel8.setBounds(170, 350, 40, 20);
 
         jButtonGetRssi.setText("Get RSSI");
         jButtonGetRssi.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -222,7 +223,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButtonGetRssi);
-        jButtonGetRssi.setBounds(456, 243, 60, 31);
+        jButtonGetRssi.setBounds(300, 350, 60, 31);
 
         jButtonSendPkt.setText("Send Pkt");
         jButtonSendPkt.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -231,7 +232,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButtonSendPkt);
-        jButtonSendPkt.setBounds(456, 151, 60, 31);
+        jButtonSendPkt.setBounds(456, 151, 70, 31);
 
         jLabel2.setText("Set Frequency");
         getContentPane().add(jLabel2);
@@ -249,6 +250,22 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         });
         getContentPane().add(jButtonSetFreq);
         jButtonSetFreq.setBounds(10, 280, 80, 31);
+
+        jLabel9.setText("Rx Pkt Length");
+        getContentPane().add(jLabel9);
+        jLabel9.setBounds(140, 270, 80, 20);
+
+        jLabel10.setText("Valid Pkt");
+        getContentPane().add(jLabel10);
+        jLabel10.setBounds(140, 240, 60, 20);
+
+        jTextFieldValidPkt.setText("no");
+        getContentPane().add(jTextFieldValidPkt);
+        jTextFieldValidPkt.setBounds(240, 230, 90, 30);
+
+        jTextFieldPktLength.setText("0");
+        getContentPane().add(jTextFieldPktLength);
+        jTextFieldPktLength.setBounds(240, 270, 60, 30);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -293,13 +310,20 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
             else
             {
+                System.out.println("Dumping RX FIFO...");
              //dumping rcv
                 byte[] packetfifo = new byte[65];
-                for(int x=0;x<65;x++)packetfifo[x]=0x00;
-                
-                packet[0] = (byte) ((byte)i|SPI_READ_CMD);
-                System.out.print("Register "+(0xff&packet[0]));
+                //clear out array
+                for(int x=0;x<65;x++)
+                {
+                    packetfifo[x]=(byte)0x00;
+                }
+                //set tp rx fifo address
+                packet[0] = (byte)(0xff&i|SPI_READ_CMD);
+                //System.out.print("Register "+(0xff&packet[0]));
+                //fifo is 64 bytes deep max
                 Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packetfifo,65);
+                //print out the data
                 for(int x=0;x<65;x++)
                     System.out.print(packetfifo[x]+" ");
                 
@@ -318,56 +342,68 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_jTextFieldPktDataTxActionPerformed
 
     private void jButtonPushPacketMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonPushPacketMousePressed
+    
+        //clear tx fifo and errors
+        //clear fifos
+        byte packet[] = new byte[2];
+        packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
+        packet[1]   =   (byte) (0x00|0x03);
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        System.out.println("Clear FIFOs");
+        
+        
         String tx_payload = jTextFieldPktDataTx.getText();
         byte payloadbytes[] = tx_payload.getBytes();
+        //byte spiPacket[] = new byte[61];        
+        byte spiPacket[] = new byte[payloadbytes.length+1];
         
-        SpiDevice spiDev;
-        try{
-            
-            spiDev = SpiFactory.getInstance(SpiChannel.CS0,
-                                     SpiDevice.DEFAULT_SPI_SPEED, // default spi speed 1 MHz
-                                     SpiDevice.DEFAULT_SPI_MODE); // default spi mode 0
-            
-            byte spiPacket[] = new byte[61];
-            for(int i=1;i<61;i++)
-                spiPacket[i]=(byte)0x39;
-            
-            spiPacket[0] = (byte)0xFF;
-            
-            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,spiPacket,61);
-            //spiDev.write(spiPacket, 0, 61);
-            
-            
-            
-            
-            
-           
-        }
-        catch(Exception e)
+        //write cmd to fifo (0x7F|0x80)
+        spiPacket[0] = (byte)0xFF;
+        //copy data over
+        for(int i=0;i<(payloadbytes.length);i++)
         {
+            spiPacket[i+1] = payloadbytes[i];
+        }   
             
-        }
+        //write to fifo    
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,spiPacket,spiPacket.length);
+        System.out.println("Packet Pushed..."+tx_payload);
+        
+        //set pkt length
+        packet[0]   =   (byte)(0x3e|SPI_WRITE_CMD);
+        packet[1]   =   (byte) payloadbytes.length;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        System.out.println("Set Tx pkt length to "+String.valueOf(payloadbytes.length));
+            
+       
        
         
        
         
     }//GEN-LAST:event_jButtonPushPacketMousePressed
 
-    private void jButton3MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton3MousePressed
+    private void jButtonSetRegMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonSetRegMousePressed
         //set reg value
         String addr = jTextFieldRegAddr.getText();
         String val = jTextFieldRegVal.getText();
         byte packet[] = new byte[2];
         try{
-            packet[0] = (byte)((byte)SPI_WRITE_CMD | Byte.parseByte(addr));
-            packet[1] = Byte.parseByte(val);
+            packet[0] = (byte)(0xff&(SPI_WRITE_CMD | Byte.parseByte(addr)));
+            packet[1] = (byte)(0xff&Byte.parseByte(val));
+            System.out.println("Set Reg...");
+            System.out.println((byte)(0xff&packet[0]));
+            System.out.println((byte)(0xff&packet[1]));
             Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         }
         catch(Exception e)
         {
             
         }
-    }//GEN-LAST:event_jButton3MousePressed
+    }//GEN-LAST:event_jButtonSetRegMousePressed
 
     private void jButtonGetRssiMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonGetRssiMousePressed
         // TODO add your handling code here:
@@ -406,40 +442,133 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         //enter rx mode
             byte packet[] = new byte[2];
+            int pktvalid    =   0;
+            int pktlength   =   0;
+            /*
             packet[0] = (byte)(0x87);
             packet[1] = (byte)0x07;
             Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-            System.out.println("Entering RX Mode...");
+            System.out.println("Entering RX Mode..." );
+            */
+            //look for valid pkt register
+            packet[0] = (byte)(0x03|SPI_READ_CMD);
+            packet[1] = (byte)0x00;
+            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+            if((0x02&packet[1])>0)
+            {
+                jTextFieldValidPkt.setText("GOT PKT!");
+                pktvalid=1;
+            }
+            else
+            {
+                jTextFieldValidPkt.setText("NO PKT!");
+            }
+            //look for pkt length register value
+            packet[0] = (byte)(0x4b|SPI_READ_CMD);
+            packet[1] = (byte)0x00;
+            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+            try{
+                jTextFieldPktLength.setText(String.valueOf((byte)(0xff&packet[1])));
+                pktlength=packet[1];
+            }
+            catch(Exception e)
+            {
+                jTextFieldPktLength.setText("0");
+                pktlength=0;
+            }
+            
+            if(pktvalid==1 && pktlength>0)
+            {
+                System.out.println("Got Packet!!");
+                System.out.println("Size is "+String.valueOf(pktlength));
+                byte rxdata[] = new byte[pktlength+1];
+                rxdata[0] = (byte)0x7f;
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,rxdata,pktlength+1);
+                String data="";
+                for(int z=1;z<(pktlength+1);z++)
+                {
+                    data = data.concat(Character.toString((char)rxdata[z]));
+                    System.out.print((byte)(0xff&rxdata[z]));
+                    System.out.print("("+Character.toString((char)rxdata[z])+") ");
+                }
+                jTextFieldPktDataRx.setText(data);
+                
+                //clear
+                //clear rx fifo
+                packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
+                packet[1]   =   (byte) (0x00|0x02);
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+
+                packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
+                packet[1]   =   (byte) 0x00;
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+            }
+            else
+            {
+                jTextFieldPktDataRx.setText("No Data...");
+            }
+            
+            //goto rx mode
+            packet[0]   =   (byte)(0x07|SPI_WRITE_CMD);
+            packet[1]   =   (byte) 0x07;
+            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+            System.out.println("Enter RX Mode...");
     }//GEN-LAST:event_jButtonGetPacketMousePressed
 
     private void jButtonSetFreqMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonSetFreqMousePressed
         // TODO add your handling code here:
-        float freq;
-        int hbsel   =   0;
-        int fb      =   0;
-        int fc      =   0;
+        float   freq;
+        int     hbsel   =   0;
+        int     fb      =   0;
+        short   fc      =   0;
         try{
             freq = Float.valueOf(jTextFieldFreq.getText());
             //convert freq to register settings
             ////413 to 453
             if(freq>=413 && freq<=453)
             {
+                System.out.println("Valid Frequency...");
                 if(freq>480)
+                {
                     hbsel=1;
+                    System.out.println("HBSEL is 1");
+                }else
+                {
+                    System.out.println("HBSEL is 0");
+                }
+                
                 //fb
                 fb = (int)((freq/(10*(1+hbsel)))-24);
-                fc = round(((freq/(10*(1+hbsel)))%1)*64000);
+                System.out.println("Fb is "+String.valueOf(fb));
+                fc = (short)round(((freq/(10*(1+hbsel)))%1)*64000);
+                System.out.println("Fb is "+String.valueOf(fc));
                 
                 byte packet[] = new byte[2];
-                packet[0] = 0x00;
+                packet[0] = (byte)(0x75|SPI_WRITE_CMD);
+                if(hbsel==1)
+                {
+                    packet[1]   =  (byte)(0xff&fb|0x20);
+                }
+                else
+                {
+                    packet[1]   =  (byte)(0xff&fb);
+                }
+                //set fb
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
                 
-                
+                //set fc
+                byte packet_fc[] = new byte[3];
+                packet_fc[0]    =   (byte)(0x76|SPI_WRITE_CMD);
+                packet_fc[1]    =   (byte)(0xff&(fc>>8));
+                packet_fc[2]    =   (byte)(0xff&fc);
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet_fc,3);
             }
             
         }
         catch(Exception e)
         {
             //invalid conversion
+            System.out.println("Bad Frequency...");
         }
     }//GEN-LAST:event_jButtonSetFreqMousePressed
    
@@ -447,6 +576,19 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     public void initRFMBRegisters()
     {
         byte[] packet = new byte[2];
+        System.out.println("Initializing RFM Registers...");
+        
+        //do sw reset first
+        packet[0]   =   (byte)(0x07|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x80;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        try{
+            sleep(1000);
+        }
+        catch(Exception e)
+        {
+            
+        }
         //1C	9A
         packet[0]   =   (byte)(0x1C|SPI_WRITE_CMD);
         packet[1]   =   (byte) 0x9A;
@@ -583,8 +725,13 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         packet[0]   =   (byte)(0x46|SPI_WRITE_CMD);
         packet[1]   =   (byte) 0xFF;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-
-
+            
+        //6d 1f  max power
+        packet[0]   =   (byte)(0x6D|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x1f;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        
         //6E	19
         packet[0]   =   (byte)(0x6E|SPI_WRITE_CMD);
         packet[1]   =   (byte) 0x19;
@@ -621,25 +768,36 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         
         
-        //05 ff
+        //05 08
         packet[0]   =   (byte)(0x05|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0xff;
-        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        
-        //06 ff
-        packet[0]   =   (byte)(0x05|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0xff;
-        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        
-        //07 03
-        packet[0]   =   (byte)(0x07|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0x03;
-        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        
-        //08 08
-        packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
         packet[1]   =   (byte) 0x08;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        //06 00
+        packet[0]   =   (byte)(0x05|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        //07 07, rx on
+        packet[0]   =   (byte)(0x07|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x07;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        //08 08 set auto tx off
+        packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        //clear fifos
+        packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
+        packet[1]   =   (byte) (0x00|0x03);
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        System.out.println("Finished Initializing RFM Registers!");
     }
     public int getRssi()
     {
@@ -826,27 +984,30 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
     private javax.swing.JButton jButtonDumpRegisters;
     private javax.swing.JButton jButtonGetPacket;
     private javax.swing.JButton jButtonGetRssi;
     private javax.swing.JButton jButtonPushPacket;
     private javax.swing.JButton jButtonSendPkt;
     private javax.swing.JButton jButtonSetFreq;
+    private javax.swing.JButton jButtonSetReg;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextFieldFreq;
     private javax.swing.JTextField jTextFieldPktDataRx;
     private javax.swing.JTextField jTextFieldPktDataTx;
+    private javax.swing.JTextField jTextFieldPktLength;
     private javax.swing.JTextField jTextFieldRSSI;
     private javax.swing.JTextField jTextFieldRegAddr;
     private javax.swing.JTextField jTextFieldRegVal;
+    private javax.swing.JTextField jTextFieldValidPkt;
     // End of variables declaration//GEN-END:variables
 }
