@@ -64,7 +64,10 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private static final byte   SEAPI_MSGTYPE_MOTOR     =   (byte)0x02;
     private static final byte   SEAPI_MSGTYPE_BALLAST   =   (byte)0x03;
     private static final byte   SEAPI_MSGTYPE_LIGHTS    =   (byte)0x04;
-    
+    private static final int    SEAPI_MIN_SERVO_NUMBER  =   1;
+    private static final int    SEAPI_MAX_SERVO_NUMBER  =   2;
+    private static final int    SEAPI_MIN_SERVO_POS_MSEC    =   950;
+    private static final int    SEAPI_MAX_SERVO_POS_MSEC    =   2600;
     private PCA9685GpioProvider gpioProvider;
     private Timer               rxPacketTimer;
     //Msg Protocol
@@ -130,10 +133,14 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         jButtonStopTimer = new javax.swing.JButton();
         jButtonStartTimer = new javax.swing.JButton();
         jButtonRxOn = new javax.swing.JButton();
+        jTextFieldServo2 = new javax.swing.JTextField();
+        jButtonServo2Left = new javax.swing.JButton();
+        jButtonServo2Right = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMinimumSize(new java.awt.Dimension(500, 350));
-        setSize(new java.awt.Dimension(580, 350));
+        setMinimumSize(new java.awt.Dimension(580, 400));
+        setPreferredSize(new java.awt.Dimension(580, 400));
+        setSize(new java.awt.Dimension(580, 400));
         getContentPane().setLayout(null);
 
         jLabel1.setText("This is the SeaPI Controller GUI");
@@ -173,11 +180,11 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
 
         jTextFieldPktDataTx.setText("hello world");
         getContentPane().add(jTextFieldPktDataTx);
-        jTextFieldPktDataTx.setBounds(241, 153, 100, 27);
+        jTextFieldPktDataTx.setBounds(330, 150, 100, 27);
 
         jLabel3.setText("TX Packet Data");
         getContentPane().add(jLabel3);
-        jLabel3.setBounds(129, 158, 94, 17);
+        jLabel3.setBounds(220, 160, 94, 17);
 
         jButtonSendPacket.setText("Send Packet");
         jButtonSendPacket.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -186,7 +193,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButtonSendPacket);
-        jButtonSendPacket.setBounds(359, 151, 90, 31);
+        jButtonSendPacket.setBounds(450, 150, 90, 31);
 
         jTextFieldPktDataRx.setText("hello world");
         jTextFieldPktDataRx.addActionListener(new java.awt.event.ActionListener() {
@@ -195,11 +202,11 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jTextFieldPktDataRx);
-        jTextFieldPktDataRx.setBounds(240, 190, 150, 27);
+        jTextFieldPktDataRx.setBounds(300, 190, 150, 27);
 
         jLabel4.setText("RX Packet Data");
         getContentPane().add(jLabel4);
-        jLabel4.setBounds(130, 200, 93, 17);
+        jLabel4.setBounds(190, 200, 93, 17);
 
         jButtonGetPacket.setText("Get Pkt");
         jButtonGetPacket.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -208,7 +215,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButtonGetPacket);
-        jButtonGetPacket.setBounds(410, 190, 75, 31);
+        jButtonGetPacket.setBounds(470, 190, 75, 31);
 
         jTextFieldRSSI.setText("0");
         getContentPane().add(jTextFieldRSSI);
@@ -267,11 +274,16 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButtonServo1Left);
-        jButtonServo1Left.setBounds(9, 120, 50, 31);
+        jButtonServo1Left.setBounds(10, 90, 50, 31);
 
         jButtonServo1Right.setText("Right");
+        jButtonServo1Right.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonServo1RightMousePressed(evt);
+            }
+        });
         getContentPane().add(jButtonServo1Right);
-        jButtonServo1Right.setBounds(70, 120, 50, 31);
+        jButtonServo1Right.setBounds(150, 90, 50, 31);
 
         jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel5.setText("Servo 1");
@@ -280,7 +292,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
 
         jTextFieldServo1.setText("1000");
         getContentPane().add(jTextFieldServo1);
-        jTextFieldServo1.setBounds(30, 90, 70, 27);
+        jTextFieldServo1.setBounds(70, 90, 70, 27);
 
         jButtonStopTimer.setText("Stop Timer");
         jButtonStopTimer.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -308,6 +320,28 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         });
         getContentPane().add(jButtonRxOn);
         jButtonRxOn.setBounds(470, 110, 70, 31);
+
+        jTextFieldServo2.setText("1000");
+        getContentPane().add(jTextFieldServo2);
+        jTextFieldServo2.setBounds(70, 130, 70, 27);
+
+        jButtonServo2Left.setText("Left");
+        jButtonServo2Left.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonServo2LeftMousePressed(evt);
+            }
+        });
+        getContentPane().add(jButtonServo2Left);
+        jButtonServo2Left.setBounds(10, 130, 50, 31);
+
+        jButtonServo2Right.setText("Right");
+        jButtonServo2Right.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonServo2RightMousePressed(evt);
+            }
+        });
+        getContentPane().add(jButtonServo2Right);
+        jButtonServo2Right.setBounds(150, 130, 50, 31);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -589,9 +623,10 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         servo1-=100;
         if(servo1<600)servo1=600;
         jTextFieldServo1.setText(String.valueOf(servo1));
-       
-        System.out.print("Sending Servo1 val: "+Short.toString((short)(servo1>>8)));
-        System.out.println(Short.toString((short)(servo1&0xff)));
+        /*
+        System.out.print("Sending Servo1 val: "+String.format("%02X",(byte)(0xff&(servo1>>8))));
+        System.out.println(" "+String.format("%02X",(byte)(0xff&(servo1&0xff))));
+        
         
         byte datapacket[]   =   new byte[3];
         datapacket[0]   =   SEAPI_MSGTYPE_SERVO;
@@ -600,6 +635,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         
         sendSpiPacket(datapacket);    
+        */
+        sendServoPositions();
     }//GEN-LAST:event_jButtonServo1LeftMousePressed
 
     private void jButtonStartTimerMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonStartTimerMousePressed
@@ -621,6 +658,103 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         System.out.println("Entering RX mode...");
               
     }//GEN-LAST:event_jButtonRxOnMousePressed
+
+    private void jButtonServo1RightMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonServo1RightMousePressed
+        // TODO add your handling code here:
+                //Send servo command 1 left
+        
+        short servo1 = Short.valueOf(jTextFieldServo1.getText());
+        servo1+=100;
+        if(servo1<600)servo1=600;
+        jTextFieldServo1.setText(String.valueOf(servo1));
+       /*
+        System.out.print("Sending Servo1 val: "+String.format("%02X",(byte)(0xff&(servo1>>8))));
+        System.out.println(" "+String.format("%02X",(byte)(0xff&(servo1&0xff))));
+        
+        
+        byte datapacket[]   =   new byte[3];
+        datapacket[0]   =   SEAPI_MSGTYPE_SERVO;
+        datapacket[1]   =   (byte)(servo1 & 0xff);
+        datapacket[2]   =   (byte)((servo1 >> 8) & 0xff);
+        
+        
+        sendSpiPacket(datapacket);    
+        */
+        sendServoPositions();
+    }//GEN-LAST:event_jButtonServo1RightMousePressed
+
+    private void jButtonServo2LeftMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonServo2LeftMousePressed
+        // TODO add your handling code here:
+                  //Send servo command 1 left
+        
+        short servo2 = Short.valueOf(jTextFieldServo2.getText());
+        servo2-=100;
+        if(servo2<600)servo2=600;
+        jTextFieldServo2.setText(String.valueOf(servo2));
+       
+        /*
+        System.out.print("Sending Servo2 val: "+String.format("%02X",(byte)(0xff&(servo2>>8))));
+        System.out.println(" "+String.format("%02X",(byte)(0xff&(servo2&0xff))));
+        
+        
+        byte datapacket[]   =   new byte[3];
+        datapacket[0]   =   SEAPI_MSGTYPE_SERVO;
+        datapacket[1]   =   (byte)(servo2 & 0xff);
+        datapacket[2]   =   (byte)((servo2 >> 8) & 0xff);
+        
+        
+        sendSpiPacket(datapacket);
+        */
+        sendServoPositions();
+    }//GEN-LAST:event_jButtonServo2LeftMousePressed
+    public void sendServoPositions()
+    {
+        short servo1;
+        short servo2;
+        //grab all desired servo positions
+        try{
+            servo1 = Short.valueOf(jTextFieldServo1.getText());
+            servo2 = Short.valueOf(jTextFieldServo2.getText());
+            
+            byte datapacket[]   =   new byte[1+2*2];
+            datapacket[0]   =   SEAPI_MSGTYPE_SERVO;
+            datapacket[1]   =   (byte)(servo1 & 0xff);
+            datapacket[2]   =   (byte)((servo1 >> 8) & 0xff);
+            datapacket[3]   =   (byte)(servo2 & 0xff);
+            datapacket[4]   =   (byte)((servo2 >> 8) & 0xff);
+
+            sendSpiPacket(datapacket);
+        }
+        catch(Exception e)
+        {
+            System.out.println("Bad servo values...");
+            return;
+        }
+        
+    }
+    private void jButtonServo2RightMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonServo2RightMousePressed
+        // TODO add your handling code here:
+                //Send servo command 1 left
+        
+        short servo2 = Short.valueOf(jTextFieldServo2.getText());
+        servo2+=100;
+        if(servo2<600)servo2=600;
+        jTextFieldServo2.setText(String.valueOf(servo2));
+       /*
+        System.out.print("Sending Servo2 val: "+String.format("%02X",(byte)(0xff&(servo2>>8))));
+        System.out.println(" "+String.format("%02X",(byte)(0xff&(servo2&0xff))));
+        
+        
+        byte datapacket[]   =   new byte[3];
+        datapacket[0]   =   SEAPI_MSGTYPE_SERVO;
+        datapacket[1]   =   (byte)(servo2 & 0xff);
+        datapacket[2]   =   (byte)((servo2 >> 8) & 0xff);
+        
+        
+        sendSpiPacket(datapacket);
+        */
+       sendServoPositions();
+    }//GEN-LAST:event_jButtonServo2RightMousePressed
    
     public void sendSpiPacket(byte[] datapkt)
     {
@@ -1055,17 +1189,15 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             System.out.print("**************************\n");
             System.out.printf("System Configuration Summary\n");
             System.out.print("Frequency is: "+gpioProvider.getFrequency().toString()+"\n");
+          /*  
             Collection<GpioPin> pinCollection;
             pinCollection = gpio.getProvisionedPins();
             for(int i=0;i<pinCollection.size();i++)
             {
                 
             }
-          
-            //2600 is far left
-            //1850 middle
-            //950  right
-            
+          */
+                        
             
             int u=0;
             //move servo
@@ -1112,7 +1244,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
        
        this.initRFMBRegisters();
         //set up timer
-        this.rxPacketTimer = new Timer(2500,new rcvListener(this));
+        this.rxPacketTimer = new Timer(100,new rcvListener(this));
         rxPacketTimer.start();
         System.out.println("Timer started...");    
         
@@ -1122,9 +1254,74 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         return result;
     }
+    public void commandServo(int servo_number,int position)
+    {
+        //2600 is far left
+        //1850 middle
+        //950  right
+
+        if(servo_number>=SEAPI_MIN_SERVO_NUMBER && servo_number<=SEAPI_MAX_SERVO_NUMBER &&
+                position>=SEAPI_MIN_SERVO_POS_MSEC && position<=SEAPI_MAX_SERVO_POS_MSEC)
+        {
+            //The value fed to setPWM is millisecond duration
+            switch(servo_number){
+                case 1:
+                    System.out.println("Servo 1 (4) Moving ..."+String.valueOf(position));
+                    gpioProvider.setPwm(PCA9685Pin.PWM_04, position);
+                    break;
+                case 2:
+                    System.out.println("Servo 2 (5) Moving ..."+String.valueOf(position));
+                    gpioProvider.setPwm(PCA9685Pin.PWM_05, position);
+                    break;    
+                default:
+                    System.out.println("Servo not defined...");
+                    break;
+            }
+        }
+        else
+        {
+            //bad params
+            System.out.println("Bad servo params! Servo #"+String.valueOf(servo_number)+" Pos:"+String.valueOf(position));
+        }
+        //servo numbers 1 -6
+    }
     public void processMsg(byte[] msg)
     {
-        JOptionPane.showMessageDialog(null, "I gots a message!!!");
+        System.out.println("I gots a message!!!");
+        if(msg.length<1)
+        {
+            //emtpy msg....
+            return;
+        }
+        //first byte is msg type
+        int msgtype = msg[0];
+        int datalength = msg.length-1;
+        
+        switch(msgtype)
+        {
+            case SeaPIMainFrame.SEAPI_MSGTYPE_SERVO:
+                //get each servo position
+                for(int servo=1;servo<=Math.floor(datalength/2);servo++)
+                {
+                    //grab two bytes
+                    System.out.println("Grabbing bytes "+String.valueOf(servo*2-1)+" and "+String.valueOf(servo*2));
+                    System.out.println("Grabbing these bytes-> "+String.format("%02X",(byte)(msg[servo*2]))+" "+String.format("%02X",(byte)(msg[servo*2-1])));
+                    short servo_pos = (short)( (msg[servo*2]<<8) | (0xff&msg[servo*2-1]) );
+                    
+                    System.out.println("Servo "+String.valueOf(servo)+" to move "+String.valueOf(servo_pos));
+                    commandServo(servo,servo_pos);
+                }
+                break;
+            case SeaPIMainFrame.SEAPI_MSGTYPE_BALLAST:
+                break;
+            case SeaPIMainFrame.SEAPI_MSGTYPE_MOTOR:
+                break;
+                     
+            default:
+                //unknown msg type
+                System.out.println("Unknown msg type "+String.valueOf(msgtype)+" rcvd!");
+        }
+        
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -1137,6 +1334,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private javax.swing.JButton jButtonSendPacket;
     private javax.swing.JButton jButtonServo1Left;
     private javax.swing.JButton jButtonServo1Right;
+    private javax.swing.JButton jButtonServo2Left;
+    private javax.swing.JButton jButtonServo2Right;
     private javax.swing.JButton jButtonSetFreq;
     private javax.swing.JButton jButtonStartTimer;
     private javax.swing.JButton jButtonStopTimer;
@@ -1155,6 +1354,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private javax.swing.JTextField jTextFieldPktLength;
     private javax.swing.JTextField jTextFieldRSSI;
     private javax.swing.JTextField jTextFieldServo1;
+    private javax.swing.JTextField jTextFieldServo2;
     private javax.swing.JTextField jTextFieldValidPkt;
     // End of variables declaration//GEN-END:variables
 }
