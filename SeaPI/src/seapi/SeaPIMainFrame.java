@@ -127,6 +127,9 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         jButtonServo1Right = new javax.swing.JButton();
         jLabel5 = new javax.swing.JLabel();
         jTextFieldServo1 = new javax.swing.JTextField();
+        jButtonStopTimer = new javax.swing.JButton();
+        jButtonStartTimer = new javax.swing.JButton();
+        jButtonRxOn = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new java.awt.Dimension(500, 350));
@@ -278,6 +281,33 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         jTextFieldServo1.setText("1000");
         getContentPane().add(jTextFieldServo1);
         jTextFieldServo1.setBounds(30, 90, 70, 27);
+
+        jButtonStopTimer.setText("Stop Timer");
+        jButtonStopTimer.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonStopTimerMousePressed(evt);
+            }
+        });
+        getContentPane().add(jButtonStopTimer);
+        jButtonStopTimer.setBounds(460, 70, 90, 31);
+
+        jButtonStartTimer.setText("Start Timer");
+        jButtonStartTimer.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonStartTimerMousePressed(evt);
+            }
+        });
+        getContentPane().add(jButtonStartTimer);
+        jButtonStartTimer.setBounds(459, 30, 90, 31);
+
+        jButtonRxOn.setText("Rx On");
+        jButtonRxOn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jButtonRxOnMousePressed(evt);
+            }
+        });
+        getContentPane().add(jButtonRxOn);
+        jButtonRxOn.setBounds(470, 110, 70, 31);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -557,6 +587,11 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         short servo1 = Short.valueOf(jTextFieldServo1.getText());
         servo1-=100;
+        if(servo1<600)servo1=600;
+        jTextFieldServo1.setText(String.valueOf(servo1));
+       
+        System.out.print("Sending Servo1 val: "+Short.toString((short)(servo1>>8)));
+        System.out.println(Short.toString((short)(servo1&0xff)));
         
         byte datapacket[]   =   new byte[3];
         datapacket[0]   =   SEAPI_MSGTYPE_SERVO;
@@ -566,6 +601,26 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         sendSpiPacket(datapacket);    
     }//GEN-LAST:event_jButtonServo1LeftMousePressed
+
+    private void jButtonStartTimerMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonStartTimerMousePressed
+        // TODO add your handling code here:
+        this.rxPacketTimer.start();
+    }//GEN-LAST:event_jButtonStartTimerMousePressed
+
+    private void jButtonStopTimerMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonStopTimerMousePressed
+        // TODO add your handling code here:
+        this.rxPacketTimer.stop();
+    }//GEN-LAST:event_jButtonStopTimerMousePressed
+
+    private void jButtonRxOnMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonRxOnMousePressed
+        // TODO add your handling code here:
+        byte packet[] = new byte[2];
+        packet[0] = (byte)(0x07|SPI_WRITE_CMD);
+        packet[1] = (byte)0x07;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, packet,2);
+        System.out.println("Entering RX mode...");
+              
+    }//GEN-LAST:event_jButtonRxOnMousePressed
    
     public void sendSpiPacket(byte[] datapkt)
     {
@@ -573,6 +628,15 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         
         System.out.println("Sending Packet...");
+        //print data in
+        System.out.print("Msg Length is ");
+        System.out.println(String.valueOf(datapkt.length));
+      
+        System.out.print("Msg Data is ");
+        for(int z=0;z<datapkt.length;z++)
+            System.out.print(Short.toString(datapkt[z]));
+        
+        System.out.println();
         //clear tx fifo
         packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
         packet[1]   =   (byte) (0x00|0x01);
@@ -585,24 +649,44 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         //copy pkt .over
         byte datapacket[]   =   new byte[datapkt.length+1];
-        datapacket[0] = (byte)0x8f;
+        datapacket[0] = (byte)(0x7f|SPI_WRITE_CMD);//set to write command and fifo (7f)
         for(int x=0;x<datapkt.length;x++)
         {
             datapacket[x+1] = datapkt[x];
         }
-        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, datapacket,datapkt.length);
-        System.out.print("Msg Length is ");
-        System.out.println(String.valueOf(datapkt.length));
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, datapacket,datapacket.length);
         
         //set length of tx register
         packet[0] = (byte)(0x3e|SPI_WRITE_CMD);
-        packet[1] = (byte)(datapkt.length+1);
+        packet[1] = (byte)(datapkt.length);
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, packet,2);
         
         //set tx mode
         packet[0] = (byte)(0x07|SPI_WRITE_CMD);
         packet[1] = (byte)0x0B;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, packet,2);
+        
+        //wait for valid tx packet...
+        System.out.println("Waiting for Valid TX Packet...");
+        packet[0] = (byte)0x03;
+        packet[1] = (byte)0x00;
+        while( (packet[1]&0x04)!=4 && (packet[1]&0x01)!=1)
+        {   
+            System.out.println("Still Waiting...");
+            try{
+                sleep(2000);
+            }
+            catch(Exception e)
+            {}
+            //read status again
+            packet[0] = (byte)0x03;
+            Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, packet,2);
+        }
+        //go back to rx mode
+        packet[0] = (byte)(0x07|SPI_WRITE_CMD);
+        packet[1] = (byte)0x07;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, packet,2);
+        System.out.println("Back to RX Mode...");
     }
     
     public void initRFMBRegisters()
@@ -1028,7 +1112,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
        
        this.initRFMBRegisters();
         //set up timer
-        this.rxPacketTimer = new Timer(250,new rcvListener(this));
+        this.rxPacketTimer = new Timer(2500,new rcvListener(this));
         rxPacketTimer.start();
         System.out.println("Timer started...");    
         
@@ -1049,10 +1133,13 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private javax.swing.JButton jButtonGetRssi;
     private javax.swing.JButton jButtonInitRFM;
     private javax.swing.JButton jButtonMoveServo;
+    private javax.swing.JButton jButtonRxOn;
     private javax.swing.JButton jButtonSendPacket;
     private javax.swing.JButton jButtonServo1Left;
     private javax.swing.JButton jButtonServo1Right;
     private javax.swing.JButton jButtonSetFreq;
+    private javax.swing.JButton jButtonStartTimer;
+    private javax.swing.JButton jButtonStopTimer;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel2;
