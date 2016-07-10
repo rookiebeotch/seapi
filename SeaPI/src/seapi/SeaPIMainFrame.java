@@ -33,6 +33,8 @@ import static java.lang.Thread.sleep;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
 
@@ -42,6 +44,7 @@ import javax.swing.Timer;
  */
 public class SeaPIMainFrame extends javax.swing.JFrame {
 
+    private static final boolean   DEBUG     =   false;
     private GpioController      gpioCntrl;
     private SpiInterface        spiDevice;
     private PWMController       pwmController;
@@ -70,6 +73,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private static final int    SEAPI_MAX_SERVO_POS_MSEC    =   2600;
     private PCA9685GpioProvider gpioProvider;
     private Timer               rxPacketTimer;
+    public static Logger        log;
     //Msg Protocol
     //Byte1 msg type 00 to 255
     
@@ -88,6 +92,9 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
      */
     public SeaPIMainFrame() {
         initComponents();
+        //init logger
+        log = Logger.getLogger(SeaPIMainFrame.class.getName());
+        log.setLevel(Level.SEVERE);
         //init SPI for RF comms
         spiTest();
         readConfigFile();
@@ -359,34 +366,34 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 gpioProvider.setPwm(PCA9685Pin.PWM_04, value);//middle
                 gpioProvider.setPwm(PCA9685Pin.PWM_05, value);//middle
                 int onOffValues[] = gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
-               
-                System.out.print("\nPOS mid: "+String.valueOf(onOffValues[0])+" "+String.valueOf(onOffValues[1]));
+               log.fine("\nPOS mid: "+String.valueOf(onOffValues[0])+" "+String.valueOf(onOffValues[1]));
+                
             }
         }
         catch(Exception e)
         {
-            
+            log.severe(e.getMessage());
         }
     }//GEN-LAST:event_jButtonMoveServoMousePressed
 
     private void jButtonDumpRegistersMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButtonDumpRegistersMousePressed
         byte[] packet = new byte[2];
-        System.out.println("Starting Register Dump");
-        System.out.println("----------------------");
+        log.info("Starting Register Dump");
+        log.info("----------------------");
         for(long i=0;i<0x80;i++)
         {
             if(i!=0x7f)
             {
                 packet[0] = (byte) ((byte)i|SPI_READ_CMD);
                 packet[1] = (byte)0x00;
-                System.out.print("Register "+(0xff&packet[0]));
+                log.fine("Register "+(0xff&packet[0]));
                 Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
                 //System.out.print(" is: "+" "+String.valueOf((byte)(packet[1]&0x00FF)));//valueof
-                System.out.println(" is: "+" "+(0xff&packet[1]));//short
+                log.fine(" is: "+" "+(0xff&packet[1]));//short
             }
             else
             {
-                System.out.println("Dumping RX FIFO...");
+                log.fine("Dumping RX FIFO...");
              //dumping rcv
                 byte[] packetfifo = new byte[65];
                 //clear out array
@@ -401,9 +408,9 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packetfifo,65);
                 //print out the data
                 for(int x=0;x<65;x++)
-                    System.out.print(packetfifo[x]+" ");
+                    log.fine(packetfifo[x]+" ");
                 
-                System.out.println();
+                
             }
         }
     }//GEN-LAST:event_jButtonDumpRegistersMousePressed
@@ -425,7 +432,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
         packet[1]   =   (byte) 0x00;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        System.out.println("Clear FIFOs");
+        log.fine("Clear FIFOs");
         
         
         String tx_payload = jTextFieldPktDataTx.getText();
@@ -443,13 +450,13 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             
         //write to fifo    
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,spiPacket,spiPacket.length);
-        System.out.println("Packet Pushed..."+tx_payload);
+        log.fine("Packet Pushed..."+tx_payload);
         
         //set pkt length
         packet[0]   =   (byte)(0x3e|SPI_WRITE_CMD);
         packet[1]   =   (byte) payloadbytes.length;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        System.out.println("Set Tx pkt length to "+String.valueOf(payloadbytes.length));
+        log.fine("Set Tx pkt length to "+String.valueOf(payloadbytes.length));
             
        //set to tx on
         packet[0] = (byte)(0x87);
@@ -470,7 +477,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         }
         catch(Exception e)
         {
-            JOptionPane.showMessageDialog(null,"ERRRRRR");
+            log.severe(e.getMessage());
         }
     }//GEN-LAST:event_jButtonGetRssiMousePressed
 
@@ -514,14 +521,15 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
             catch(Exception e)
             {
+                log.severe(e.getMessage());
                 jTextFieldPktLength.setText("0");
                 pktlength=0;
             }
             
             if(pktvalid==1 && pktlength>0)
             {
-                System.out.println("Got Packet!!");
-                System.out.println("Size is "+String.valueOf(pktlength));
+                log.fine("Got Packet!!");
+                log.fine("Size is "+String.valueOf(pktlength));
                 byte rxdata[] = new byte[pktlength+1];
                 rxdata[0] = (byte)0x7f;
                 Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,rxdata,pktlength+1);
@@ -529,8 +537,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 for(int z=1;z<(pktlength+1);z++)
                 {
                     data = data.concat(Character.toString((char)rxdata[z]));
-                    System.out.print((byte)(0xff&rxdata[z]));
-                    System.out.print("("+Character.toString((char)rxdata[z])+") ");
+                    log.fine(Byte.toString((byte)(0xff&rxdata[z])));
+                    log.fine("("+Character.toString((char)rxdata[z])+") ");
                 }
                 jTextFieldPktDataRx.setText(data);
                 
@@ -548,7 +556,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 packet[0]   =   (byte)(0x07|SPI_WRITE_CMD);
                 packet[1]   =   (byte) 0x07;
                 Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-                System.out.println("Enter RX Mode...");
+                log.fine("Enter RX Mode...");
             }
             else
             {
@@ -570,21 +578,21 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             ////413 to 453
             if(freq>=413 && freq<=453)
             {
-                System.out.println("Valid Frequency...");
+                log.fine("Valid Frequency...");
                 if(freq>480)
                 {
                     hbsel=1;
-                    System.out.println("HBSEL is 1");
+                    log.fine("HBSEL is 1");
                 }else
                 {
-                    System.out.println("HBSEL is 0");
+                    log.fine("HBSEL is 0");
                 }
                 
                 //fb
                 fb = (int)((freq/(10*(1+hbsel)))-24);
-                System.out.println("Fb is "+String.valueOf(fb));
+                log.fine("Fb is "+String.valueOf(fb));
                 fc = (short)round(((freq/(10*(1+hbsel)))%1)*64000);
-                System.out.println("Fb is "+String.valueOf(fc));
+                log.fine("Fb is "+String.valueOf(fc));
                 
                 byte packet[] = new byte[2];
                 packet[0] = (byte)(0x75|SPI_WRITE_CMD);
@@ -611,7 +619,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         catch(Exception e)
         {
             //invalid conversion
-            System.out.println("Bad Frequency...");
+            log.severe(e.getMessage());
+            log.severe("Bad Frequency...");
         }
     }//GEN-LAST:event_jButtonSetFreqMousePressed
 
@@ -655,7 +664,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         packet[0] = (byte)(0x07|SPI_WRITE_CMD);
         packet[1] = (byte)0x07;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, packet,2);
-        System.out.println("Entering RX mode...");
+        log.fine("Entering RX mode...");
               
     }//GEN-LAST:event_jButtonRxOnMousePressed
 
@@ -727,7 +736,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         }
         catch(Exception e)
         {
-            System.out.println("Bad servo values...");
+            log.severe(e.getMessage());
+            log.severe("Bad servo values...");
             return;
         }
         
@@ -761,16 +771,16 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         byte packet[] = new byte[2];
         
         
-        System.out.println("Sending Packet...");
+        log.fine("Sending Packet...");
         //print data in
-        System.out.print("Msg Length is ");
-        System.out.println(String.valueOf(datapkt.length));
+        log.fine("Msg Length is ");
+        log.fine(String.valueOf(datapkt.length));
       
-        System.out.print("Msg Data is ");
+        log.fine("Msg Data is ");
         for(int z=0;z<datapkt.length;z++)
-            System.out.print(Short.toString(datapkt[z]));
+            log.fine(Short.toString(datapkt[z]));
         
-        System.out.println();
+        
         //clear tx fifo
         packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
         packet[1]   =   (byte) (0x00|0x01);
@@ -801,12 +811,12 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, packet,2);
         
         //wait for valid tx packet...
-        System.out.println("Waiting for Valid TX Packet...");
+        log.finest("Waiting for Valid TX Packet...");
         packet[0] = (byte)0x03;
         packet[1] = (byte)0x00;
         while( (packet[1]&0x04)!=4 && (packet[1]&0x01)!=1)
         {   
-            System.out.println("Still Waiting...");
+            log.finest("Still Waiting...");
             try{
                 sleep(2000);
             }
@@ -820,13 +830,13 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         packet[0] = (byte)(0x07|SPI_WRITE_CMD);
         packet[1] = (byte)0x07;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, packet,2);
-        System.out.println("Back to RX Mode...");
+        log.finest("Back to RX Mode...");
     }
     
     public void initRFMBRegisters()
     {
         byte[] packet = new byte[2];
-        System.out.println("Initializing RFM Registers...");
+        log.info("Initializing RFM Registers...");
         
         //do sw reset first
         packet[0]   =   (byte)(0x07|SPI_WRITE_CMD);
@@ -1047,7 +1057,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         packet[1]   =   (byte) 0x00;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         
-        System.out.println("Finished Initializing RFM Registers!");
+        log.info("Finished Initializing RFM Registers!");
     }
     public int getRssi()
     {
@@ -1066,12 +1076,12 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
          // setup SPI for communication
         int fd = Spi.wiringPiSPISetup(0, 1000000);
         if (fd <= -1) {
-            System.out.println(" ==>> SPI SETUP FAILED");
+            log.info(" ==>> SPI SETUP FAILED");
             return;
         }
         else
         {
-             System.out.println("SPI SETUP....OK!");
+             log.info("SPI SETUP....OK!");
         }
         
         
@@ -1124,16 +1134,16 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             //Read File Line By Line
             while ((strLine = breader.readLine()) != null)   {
                 // Print the content on the console
-                System.out.println (strLine);
+                log.info(strLine);
                 if(strLine.contains("controller"))
                 {
                     //config for controller
                     SEAPI_MASTER_MODE = 1;
-                    System.out.println("Setting mode to Controller!");
+                    log.info("Setting mode to Controller!");
                 }
                 else
                 {
-                    System.out.println("Setting mode to Submarine!");
+                    log.info("Setting mode to Submarine!");
                 }
             }
 
@@ -1142,7 +1152,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         }
         catch(Exception e)
         {
-            System.out.println("No configfile seapi.ini found.");
+            log.severe(e.getMessage());
+            log.info("No configfile seapi.ini found.");
             return -1;
         }
         return 0;
@@ -1151,16 +1162,16 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     {
         int     result = ERROR_CODE_SUCESS;
         // TODO code application logic here
-        System.out.print("Starting SeaPI...");
+        log.info("Starting SeaPI...");
         
         //PMW Controller
        try{       
-            System.out.print("Configuring PWM Controller...");
+            log.info("Configuring PWM Controller...");
             
             gpioProvider = new PCA9685GpioProvider(I2CFactory.getInstance(I2CBus.BUS_1), I2C_ADDR_PWM_CONTROLLER1,new BigDecimal(SERVO_FREQUENCY), new BigDecimal(SERVO_FREQUENCY_ADJUSTMENT));
             if(gpioProvider == null)
             {
-                System.out.print("Failure: Unable to connect to PWM Controller...\n");
+                log.info("Failure: Unable to connect to PWM Controller...\n");
                 return ERROR_CODE_FAILURE;
             }
             GpioController gpio = GpioFactory.getInstance();
@@ -1186,9 +1197,9 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             
             
             //gpioProvider.reset();
-            System.out.print("**************************\n");
-            System.out.printf("System Configuration Summary\n");
-            System.out.print("Frequency is: "+gpioProvider.getFrequency().toString()+"\n");
+            log.info("**************************");
+            log.info("System Configuration Summary");
+            log.info("Frequency is: "+gpioProvider.getFrequency().toString());
           /*  
             Collection<GpioPin> pinCollection;
             pinCollection = gpio.getProvisionedPins();
@@ -1237,7 +1248,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
        catch(Exception e)
        {
            //serious error
-           
+           log.severe(e.getMessage());
            //TODO: Set an LED indicator for an error
            result = ERROR_CODE_FAILURE;
        }
@@ -1246,7 +1257,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         //set up timer
         this.rxPacketTimer = new Timer(100,new rcvListener(this));
         rxPacketTimer.start();
-        System.out.println("Timer started...");    
+        log.fine("Timer started...");    
         
         
         
@@ -1266,28 +1277,28 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             //The value fed to setPWM is millisecond duration
             switch(servo_number){
                 case 1:
-                    System.out.println("Servo 1 (4) Moving ..."+String.valueOf(position));
+                    log.fine("Servo 1 (4) Moving ..."+String.valueOf(position));
                     gpioProvider.setPwm(PCA9685Pin.PWM_04, position);
                     break;
                 case 2:
-                    System.out.println("Servo 2 (5) Moving ..."+String.valueOf(position));
+                    log.fine("Servo 2 (5) Moving ..."+String.valueOf(position));
                     gpioProvider.setPwm(PCA9685Pin.PWM_05, position);
                     break;    
                 default:
-                    System.out.println("Servo not defined...");
+                    log.fine("Servo not defined...");
                     break;
             }
         }
         else
         {
             //bad params
-            System.out.println("Bad servo params! Servo #"+String.valueOf(servo_number)+" Pos:"+String.valueOf(position));
+            log.fine("Bad servo params! Servo #"+String.valueOf(servo_number)+" Pos:"+String.valueOf(position));
         }
         //servo numbers 1 -6
     }
     public void processMsg(byte[] msg)
     {
-        System.out.println("I gots a message!!!");
+        log.fine("I gots a message!!!");
         if(msg.length<1)
         {
             //emtpy msg....
@@ -1304,11 +1315,11 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 for(int servo=1;servo<=Math.floor(datalength/2);servo++)
                 {
                     //grab two bytes
-                    System.out.println("Grabbing bytes "+String.valueOf(servo*2-1)+" and "+String.valueOf(servo*2));
-                    System.out.println("Grabbing these bytes-> "+String.format("%02X",(byte)(msg[servo*2]))+" "+String.format("%02X",(byte)(msg[servo*2-1])));
+                    log.fine("Grabbing bytes "+String.valueOf(servo*2-1)+" and "+String.valueOf(servo*2));
+                    log.fine("Grabbing these bytes-> "+String.format("%02X",(byte)(msg[servo*2]))+" "+String.format("%02X",(byte)(msg[servo*2-1])));
                     short servo_pos = (short)( (msg[servo*2]<<8) | (0xff&msg[servo*2-1]) );
                     
-                    System.out.println("Servo "+String.valueOf(servo)+" to move "+String.valueOf(servo_pos));
+                    log.fine("Servo "+String.valueOf(servo)+" to move "+String.valueOf(servo_pos));
                     commandServo(servo,servo_pos);
                 }
                 break;
@@ -1319,7 +1330,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                      
             default:
                 //unknown msg type
-                System.out.println("Unknown msg type "+String.valueOf(msgtype)+" rcvd!");
+                log.fine("Unknown msg type "+String.valueOf(msgtype)+" rcvd!");
         }
         
     }

@@ -34,7 +34,7 @@ public class rcvListener implements ActionListener {
         if((packet[1]&04)!=4 )
         {
             //not in rx mode....
-            System.out.println("Not in Rx Mode!!");
+            mainPtr.log.fine("Not in Rx Mode!!");
             
         }
         
@@ -43,12 +43,12 @@ public class rcvListener implements ActionListener {
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         
         //check for crc error
-        if((packet[1]&0x01)==1)System.out.println("CRC rx error!!");
+        if((packet[1]&0x01)==1)mainPtr.log.fine("CRC rx error!!");
         
         
         if((packet[1]&0x02)==2)
         {
-            System.out.println("Packet Valid!!");
+            mainPtr.log.fine("Packet Valid!!");
             //packet to process
             //get length of msg
             packet[0] = (byte)0x4b;
@@ -81,13 +81,13 @@ public class rcvListener implements ActionListener {
             packet[0]   =   (byte)(0x07|mainPtr.SPI_WRITE_CMD);
             packet[1]   =   (byte) 0x07;
             Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-            System.out.println("Back to RX Mode...");
+            mainPtr.log.fine("Back to RX Mode...");
         }
         else
         {
-            System.out.println("No packets...");
-            System.out.print("Reg 3 Status: ");
-            System.out.println(0xff&packet[1]);
+            mainPtr.log.fine("No packets...");
+            mainPtr.log.fine("Reg 3 Status: "+Byte.toString((byte)(0xff&packet[1])));
+            
         }
     }
     
