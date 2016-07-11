@@ -37,6 +37,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
+import static java.lang.Math.round;
+import static java.lang.Thread.sleep;
 
 /**
  *
@@ -44,33 +46,35 @@ import javax.swing.Timer;
  */
 public class SeaPIMainFrame extends javax.swing.JFrame {
 
-    private static final boolean   DEBUG     =   false;
+    
     private GpioController      gpioCntrl;
     private SpiInterface        spiDevice;
     private PWMController       pwmController;
-    private static final int    I2C_ADDR_PWM_CONTROLLER1        =     0x40;
-    private static final int    SERVO_FREQUENCY                 =       50;
-    private static final int    SERVO_FREQUENCY_ADJUSTMENT      =       1;
-    private static final int    rpi_i2c_bus_addr         =     I2CBus.BUS_1;
+    private static final int    I2C_ADDR_PWM_CONTROLLER1    =     0x40;
+    private static final int    SERVO_FREQUENCY             =       50;
+    private static final int    SERVO_FREQUENCY_ADJUSTMENT  =       1;
+    private static final int    rpi_i2c_bus_addr            =     I2CBus.BUS_1;
     
-    private static final int    ERROR_CODE_SUCESS       =   0;
-    private static final int    ERROR_CODE_FAILURE      =   -1;
-    private static final int    ERROR_CODE_WARNING      =   1;
+    private static final int    ERROR_CODE_SUCESS           =   0;
+    private static final int    ERROR_CODE_FAILURE          =   -1;
+    private static final int    ERROR_CODE_WARNING          =   1;
    
-    private final static byte   SPI_READ_CMD    = (byte)0x00;
-    public final static byte    SPI_WRITE_CMD   = (byte)0x80;
+    private final static byte   SPI_READ_CMD                = (byte)0x00;
+    public final static byte    SPI_WRITE_CMD               = (byte)0x80;
     
-    public  int                 SEAPI_MASTER_MODE =   0;
+    public  int                 SEAPI_MASTER_MODE           =   0;
     
-    private static final byte   RFM22_REG05_VAL  =   (byte)0x02;
-    private static final byte   SEAPI_MSGTYPE_SERVO     =   (byte)0x01;
-    private static final byte   SEAPI_MSGTYPE_MOTOR     =   (byte)0x02;
-    private static final byte   SEAPI_MSGTYPE_BALLAST   =   (byte)0x03;
-    private static final byte   SEAPI_MSGTYPE_LIGHTS    =   (byte)0x04;
-    private static final int    SEAPI_MIN_SERVO_NUMBER  =   1;
-    private static final int    SEAPI_MAX_SERVO_NUMBER  =   2;
+    private static final byte   RFM22_REG05_VAL             =   (byte)0x02;
+    private static final byte   SEAPI_MSGTYPE_SERVO         =   (byte)0x01;
+    private static final byte   SEAPI_MSGTYPE_MOTOR         =   (byte)0x02;
+    private static final byte   SEAPI_MSGTYPE_BALLAST       =   (byte)0x03;
+    private static final byte   SEAPI_MSGTYPE_LIGHTS        =   (byte)0x04;
+    private static final int    SEAPI_MIN_SERVO_NUMBER      =    1;
+    private static final int    SEAPI_MAX_SERVO_NUMBER      =   2;
     private static final int    SEAPI_MIN_SERVO_POS_MSEC    =   950;
     private static final int    SEAPI_MAX_SERVO_POS_MSEC    =   2600;
+    private static final int    SEAPI_SPI_SPEED_HZ          =   10000000;
+    private static final int    SEAPI_RFM22B_POLL_TIME_MSEC =   100;
     private PCA9685GpioProvider gpioProvider;
     private Timer               rxPacketTimer;
     public static Logger        log;
@@ -96,10 +100,11 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         log = Logger.getLogger(SeaPIMainFrame.class.getName());
         log.setLevel(Level.SEVERE);
         //init SPI for RF comms
-        spiTest();
+        spiSetup();
         readConfigFile();
+
         //Init I2C for PWM/Servo
-        seaPiInit();
+        seaPiInit(SEAPI_MASTER_MODE);
         
     }
 
@@ -817,11 +822,6 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         while( (packet[1]&0x04)!=4 && (packet[1]&0x01)!=1)
         {   
             log.finest("Still Waiting...");
-            try{
-                sleep(2000);
-            }
-            catch(Exception e)
-            {}
             //read status again
             packet[0] = (byte)0x03;
             Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, packet,2);
@@ -1071,10 +1071,10 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         return rssi;
     }
-    public void spiTest()
+    public void spiSetup()
     {
          // setup SPI for communication
-        int fd = Spi.wiringPiSPISetup(0, 1000000);
+        int fd = Spi.wiringPiSPISetup(0, SEAPI_SPI_SPEED_HZ);
         if (fd <= -1) {
             log.info(" ==>> SPI SETUP FAILED");
             return;
@@ -1158,106 +1158,125 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         }
         return 0;
     }
-    public int seaPiInit()
+    public int seaPiInit(int mode)
     {
         int     result = ERROR_CODE_SUCESS;
         // TODO code application logic here
         log.info("Starting SeaPI...");
         
-        //PMW Controller
-       try{       
-            log.info("Configuring PWM Controller...");
-            
-            gpioProvider = new PCA9685GpioProvider(I2CFactory.getInstance(I2CBus.BUS_1), I2C_ADDR_PWM_CONTROLLER1,new BigDecimal(SERVO_FREQUENCY), new BigDecimal(SERVO_FREQUENCY_ADJUSTMENT));
-            if(gpioProvider == null)
-            {
-                log.info("Failure: Unable to connect to PWM Controller...\n");
-                return ERROR_CODE_FAILURE;
-            }
-            GpioController gpio = GpioFactory.getInstance();
-            
-            //Set Pins
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_00, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_01, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_02, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_03, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_04, "Servo 1");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_05, "Servo 2");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_06, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_07, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_08, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_09, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_10, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_11, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_12, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_13, "not used");
-            gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_14, "not used");
-            
-            
-            
-            
-            //gpioProvider.reset();
-            log.info("**************************");
-            log.info("System Configuration Summary");
-            log.info("Frequency is: "+gpioProvider.getFrequency().toString());
-          /*  
-            Collection<GpioPin> pinCollection;
-            pinCollection = gpio.getProvisionedPins();
-            for(int i=0;i<pinCollection.size();i++)
-            {
-                
-            }
-          */
-                        
-            
-            int u=0;
-            //move servo
-            while(u!=0)
-            {
-                //The value fed to setPWM is millisecon duration
-                System.out.print("MOVE!\n");
-            
-                gpioProvider.setPwm(PCA9685Pin.PWM_04, 1500);//middle
-                int[] onOffValues  =   gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
-                System.out.print("\nPOS mid: "+String.valueOf(onOffValues[0])+" "+String.valueOf(onOffValues[1]));
-                sleep(3000);
-                
+        if(mode==1)
+        {
+            //controller
+            //has Radio RFM
+            this.initRFMBRegisters();
+            //set up timer
+            this.rxPacketTimer = new Timer(SEAPI_RFM22B_POLL_TIME_MSEC,new rcvListener(this));
+            rxPacketTimer.start();
+            log.fine("Timer started...");
+            //no PWM controller
+        }
+        else
+        {
+            //vehicle
+            //has radio RFM
+            this.initRFMBRegisters();
+            //set up timer
+            this.rxPacketTimer = new Timer(SEAPI_RFM22B_POLL_TIME_MSEC,new rcvListener(this));
+            rxPacketTimer.start();
+            log.fine("Timer started...");
+            //has PWM controller(I2C)
+             //PMW Controller
+            try{       
+                 log.info("Configuring PWM Controller...");
 
-                  gpioProvider.setPwm(PCA9685Pin.PWM_04, 2100);//right 90
-                int[] onOffValues2  =   gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
-                System.out.print("\nPOS right: "+String.valueOf(onOffValues2[0])+" "+String.valueOf(onOffValues2[1]));
-                sleep(3000);
-                
-                
+                 gpioProvider = new PCA9685GpioProvider(I2CFactory.getInstance(I2CBus.BUS_1), I2C_ADDR_PWM_CONTROLLER1,new BigDecimal(SERVO_FREQUENCY), new BigDecimal(SERVO_FREQUENCY_ADJUSTMENT));
+                 if(gpioProvider == null)
+                 {
+                     log.info("Failure: Unable to connect to PWM Controller...\n");
+                     return ERROR_CODE_FAILURE;
+                 }
+                 GpioController gpio = GpioFactory.getInstance();
 
-                gpioProvider.setPwm(PCA9685Pin.PWM_04, 1000);//left 90
-                int[] onOffValues3  =   gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
-                System.out.print("\nPOS left: "+String.valueOf(onOffValues3[0])+" "+String.valueOf(onOffValues3[1]));
-                sleep(3000);
+                 //Set Pins
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_00, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_01, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_02, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_03, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_04, "Servo 1");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_05, "Servo 2");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_06, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_07, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_08, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_09, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_10, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_11, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_12, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_13, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_14, "not used");
+
+
+
+
+                 //gpioProvider.reset();
+                 log.info("**************************");
+                 log.info("System Configuration Summary");
+                 log.info("Frequency is: "+gpioProvider.getFrequency().toString());
+               /*  
+                 Collection<GpioPin> pinCollection;
+                 pinCollection = gpio.getProvisionedPins();
+                 for(int i=0;i<pinCollection.size();i++)
+                 {
+
+                 }
+               */
+
+
+                 int u=0;
+                 //move servo
+                 while(u!=0)
+                 {
+                     //The value fed to setPWM is millisecon duration
+                     System.out.print("MOVE!\n");
+
+                     gpioProvider.setPwm(PCA9685Pin.PWM_04, 1500);//middle
+                     int[] onOffValues  =   gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
+                     System.out.print("\nPOS mid: "+String.valueOf(onOffValues[0])+" "+String.valueOf(onOffValues[1]));
+                     sleep(3000);
+
+
+                       gpioProvider.setPwm(PCA9685Pin.PWM_04, 2100);//right 90
+                     int[] onOffValues2  =   gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
+                     System.out.print("\nPOS right: "+String.valueOf(onOffValues2[0])+" "+String.valueOf(onOffValues2[1]));
+                     sleep(3000);
+
+
+
+                     gpioProvider.setPwm(PCA9685Pin.PWM_04, 1000);//left 90
+                     int[] onOffValues3  =   gpioProvider.getPwmOnOffValues(PCA9685Pin.PWM_04);
+                     System.out.print("\nPOS left: "+String.valueOf(onOffValues3[0])+" "+String.valueOf(onOffValues3[1]));
+                     sleep(3000);
+                 }
+
+                //pwmController = new PWMController(I2CFactory.getInstance(rpi_i2c_bus_addr),i2c_addr_pwm_controller1);
+
+                 //set freq
+                // pwmController.setFreq(50);
+                 //pwmController.setPWM4();
+
+
+
             }
-            
-           //pwmController = new PWMController(I2CFactory.getInstance(rpi_i2c_bus_addr),i2c_addr_pwm_controller1);
-            
-            //set freq
-           // pwmController.setFreq(50);
-            //pwmController.setPWM4();
-            
-
-    
-       }
-       catch(Exception e)
-       {
-           //serious error
-           log.severe(e.getMessage());
-           //TODO: Set an LED indicator for an error
-           result = ERROR_CODE_FAILURE;
-       }
+            catch(Exception e)
+            {
+                //serious error
+                log.severe(e.getMessage());
+                //TODO: Set an LED indicator for an error
+                result = ERROR_CODE_FAILURE;
+            }
+        }
        
-       this.initRFMBRegisters();
-        //set up timer
-        this.rxPacketTimer = new Timer(100,new rcvListener(this));
-        rxPacketTimer.start();
-        log.fine("Timer started...");    
+       
+            
         
         
         
