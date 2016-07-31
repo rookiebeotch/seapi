@@ -39,6 +39,10 @@ import javax.swing.JOptionPane;
 import javax.swing.Timer;
 import static java.lang.Math.round;
 import static java.lang.Thread.sleep;
+import static java.lang.Math.round;
+import static java.lang.Thread.sleep;
+import static java.lang.Math.round;
+import static java.lang.Thread.sleep;
 
 /**
  *
@@ -1170,7 +1174,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             //has Radio RFM
             this.initRFMBRegisters();
             //set up timer
-            this.rxPacketTimer = new Timer(SEAPI_RFM22B_POLL_TIME_MSEC,new rcvListener(this));
+            this.rxPacketTimer = new Timer(SEAPI_RFM22B_POLL_TIME_MSEC,new RcvListener(this));
             rxPacketTimer.start();
             log.fine("Timer started...");
             //no PWM controller
@@ -1181,7 +1185,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             //has radio RFM
             this.initRFMBRegisters();
             //set up timer
-            this.rxPacketTimer = new Timer(SEAPI_RFM22B_POLL_TIME_MSEC,new rcvListener(this));
+            this.rxPacketTimer = new Timer(SEAPI_RFM22B_POLL_TIME_MSEC,new RcvListener(this));
             rxPacketTimer.start();
             log.fine("Timer started...");
             //has PWM controller(I2C)

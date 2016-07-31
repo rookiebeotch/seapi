@@ -14,9 +14,9 @@ import java.awt.event.ActionListener;
  * @author jorge
  */
 
-public class rcvListener implements ActionListener {
+public class RcvListener implements ActionListener {
     SeaPIMainFrame mainPtr;
-    rcvListener(SeaPIMainFrame mptr)
+    RcvListener(SeaPIMainFrame mptr)
     {
         mainPtr = mptr;
     }
