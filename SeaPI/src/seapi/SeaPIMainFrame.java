@@ -82,6 +82,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private PCA9685GpioProvider gpioProvider;
     private Timer               rxPacketTimer;
     public static Logger        log;
+    private StateMachineController      sm;
     //Msg Protocol
     //Byte1 msg type 00 to 255
     
@@ -109,6 +110,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
 
         //Init I2C for PWM/Servo
         seaPiInit(SEAPI_MASTER_MODE);
+        
+        sm = new StateMachineController();
         
     }
 
