@@ -8,6 +8,10 @@ package seapi;
 import com.pi4j.component.servo.Servo;
 import com.pi4j.component.servo.impl.GenericServo;
 import com.pi4j.component.servo.impl.PCA9685GpioServoProvider;
+import com.pi4j.device.Device;
+import com.pi4j.gpio.extension.ads.ADS1015GpioProvider;
+import com.pi4j.gpio.extension.ads.ADS1015Pin;
+import com.pi4j.gpio.extension.ads.ADS1x15GpioProvider.ProgrammableGainAmplifierValue;
 import com.pi4j.gpio.extension.pca.PCA9685GpioProvider;
 import com.pi4j.gpio.extension.pca.PCA9685Pin;
 import com.pi4j.io.gpio.GpioController;
@@ -17,6 +21,9 @@ import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.GpioPinDigitalOutput;
 import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.RaspiPin;
+import com.pi4j.io.gpio.event.GpioPinAnalogValueChangeEvent;
+import com.pi4j.io.gpio.event.GpioPinListenerAnalog;
+import com.pi4j.io.gpio.event.PinListener;
 import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CFactory;
 import com.pi4j.io.spi.SpiChannel;
@@ -27,6 +34,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import static java.lang.Math.round;
 import static java.lang.Thread.sleep;
@@ -43,6 +51,23 @@ import static java.lang.Math.round;
 import static java.lang.Thread.sleep;
 import static java.lang.Math.round;
 import static java.lang.Thread.sleep;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import static javax.bluetooth.DataElement.UUID;
+import javax.bluetooth.DiscoveryAgent;
+import javax.bluetooth.LocalDevice;
+import javax.bluetooth.RemoteDevice;
+import javax.bluetooth.UUID;
+import org.usb4java.BosDescriptor;
+import org.usb4java.BufferUtils;
+import org.usb4java.ConfigDescriptor;
+import org.usb4java.Context;
+import org.usb4java.DeviceDescriptor;
+import org.usb4java.DeviceHandle;
+import org.usb4java.DeviceList;
+import org.usb4java.LibUsb;
+import org.usb4java.LibUsbException;
+import org.usb4java.Transfer;
 
 /**
  *
@@ -80,8 +105,25 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private static final int    SEAPI_SPI_SPEED_HZ          =   10000000;
     private static final int    SEAPI_RFM22B_POLL_TIME_MSEC =   100;
     private PCA9685GpioProvider gpioProvider;
+    private ADS1015GpioProvider gpioProviderADC;
     private Timer               rxPacketTimer;
     public static Logger        log;
+    private static Object lock=new Object();
+    
+    //USB IDs
+    private static int      USB_HID_BBCCONTROLLER_IDVENDOR  =   0x79;
+    private static int      USB_HID_BBCCONTROLLER_IDPRODUCT =   0x181c;
+    private static int      USB_HID_BBCCONTROLLER_MFR       =   0x1;
+    private static int      USB_HID_BBCCONTROLLER_PRODUCT   =   0x2;
+    private org.usb4java.Device          usbControllerDevice;
+    private DeviceHandle    usbDeviceHandle;
+    public volatile ControllerData  gamepad_data;
+    //controller  idVendor=0x0079  idProduct=0x181c Mfr=0x1, Product=0x2, SerialNumber=0
+    //Product: BBC-GAME
+    //Manufacturer: ZhiXu
+    
+    
+    
     //Msg Protocol
     //Byte1 msg type 00 to 255
     
@@ -1162,7 +1204,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         }
         return 0;
     }
-    public int seaPiInit(int mode)
+    public int seaPiInit(int mode) 
     {
         int     result = ERROR_CODE_SUCESS;
         // TODO code application logic here
@@ -1170,7 +1212,226 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         if(mode==1)
         {
-            //controller
+            //USB Device Detection/Setup (Hard wired not Bluetooth USB Devices)
+            
+            //controller  idVendor=0x0079  idProduct=0x181c Mfr=0x1, Product=0x2, SerialNumber=0
+            //Product: BBC-GAME
+            //Manufacturer: ZhiXu
+            gamepad_data = new ControllerData();
+            
+            System.out.println("Setting up usb HID...");
+            usbControllerDevice = null;
+            Context context = new Context();
+            int myresult = LibUsb.init(context);
+            if (myresult != LibUsb.SUCCESS) throw new LibUsbException("Unable to initialize libusb.", result);
+            org.usb4java.DeviceList list = new org.usb4java.DeviceList();
+            myresult = LibUsb.getDeviceList(null, list);
+            if(myresult>0)
+            {
+                System.out.println("Found "+String.valueOf(myresult)+" Devices!!");
+                System.out.println("---------------------------------");
+                for (org.usb4java.Device device: list)
+                {
+                    
+                    DeviceDescriptor descriptor = new DeviceDescriptor();
+                    result = LibUsb.getDeviceDescriptor(device, descriptor);
+                    
+                    if (result >= 0)
+                    {
+                        if(SeaPIMainFrame.USB_HID_BBCCONTROLLER_IDPRODUCT == descriptor.idProduct() && 
+                           SeaPIMainFrame.USB_HID_BBCCONTROLLER_IDVENDOR == descriptor.idVendor() &&
+                           SeaPIMainFrame.USB_HID_BBCCONTROLLER_MFR == descriptor.iManufacturer() &&
+                           SeaPIMainFrame.USB_HID_BBCCONTROLLER_PRODUCT == descriptor.iProduct() )
+                        {
+                            System.out.println("This IS the Device we are looking for!!!");
+                            System.out.println(descriptor.dump());
+                            
+                            
+                            usbControllerDevice = device;
+                            ConfigDescriptor configDes = new ConfigDescriptor();
+                            LibUsb.getConfigDescriptor(usbControllerDevice, (byte)0, configDes);
+                            System.out.println("Config Descriptor: "+configDes.dump());
+                           
+                        }
+                        System.out.println("Vendor "+String.valueOf(descriptor.idVendor())+" Product ID: "+descriptor.idProduct());
+                        System.out.println("Manufacturer: "+descriptor.iManufacturer()+"  Product: "+descriptor.iProduct());
+                    }
+                    System.out.println("---------------------------------");
+                    
+                }
+            }
+            else
+            {
+                System.out.println("None found :(");
+            }
+            if(usbControllerDevice!=null)
+            {
+                // Open the device
+                usbDeviceHandle = new DeviceHandle();
+                
+                if(LibUsb.SUCCESS != LibUsb.open(usbControllerDevice, usbDeviceHandle))
+                {
+                    //error here
+                    System.out.println("Error opening usb hib device!!!");
+                }
+                try{
+                    // Check if kernel driver is attached to the interface
+                    int attached = LibUsb.kernelDriverActive(usbDeviceHandle, 1);
+                    if (attached < 0)
+                    {
+                       System.out.println("Unable to check kernel driver active");
+                    }
+                    else
+                    {
+                        System.out.println("Interface 0: "+String.valueOf(LibUsb.kernelDriverActive(usbDeviceHandle,0)));
+                        System.out.println("Interface 1: "+String.valueOf(LibUsb.kernelDriverActive(usbDeviceHandle,1)));
+                    }
+                    // Detach kernel driver from interface 0 and 1. This can fail if
+                    // kernel is not attached to the device or operating system
+                    // doesn't support this operation. These cases are ignored here.
+                    myresult = LibUsb.detachKernelDriver(usbDeviceHandle, 0);
+                    if (myresult != LibUsb.SUCCESS &&
+                        myresult != LibUsb.ERROR_NOT_SUPPORTED &&
+                        myresult != LibUsb.ERROR_NOT_FOUND)
+                    {
+                        System.out.println("Unable to detach kernel driver: "+String.valueOf(myresult));
+                    }
+                    else
+                    {
+                        // Claim interface
+                        myresult = LibUsb.claimInterface(usbDeviceHandle, 0);
+                        if (myresult != LibUsb.SUCCESS)
+                        {
+                           System.out.println("Unable to claim interface!!");
+                        }
+                        else
+                        {
+                            System.out.println("I claimed the device!!!!!");
+                            //start monitor thread
+                            UsbInterruptThread usbThread = new UsbInterruptThread(usbDeviceHandle,this.gamepad_data);
+                            usbThread.start();
+                            /*
+                            //Now what
+                            ByteBuffer buffer = BufferUtils.allocateByteBuffer(64).order(
+                            ByteOrder.LITTLE_ENDIAN);
+                            //Transfer transfer = LibUsb.allocTransfer();
+                            java.nio.IntBuffer transferred = java.nio.IntBuffer.allocate(3);
+                            
+                            int result_xfer = LibUsb.bulkTransfer(usbDeviceHandle,(byte)1, buffer, transferred, 3000);
+                            if(LibUsb.SUCCESS != result_xfer)
+                            {
+                                System.out.println("Error Transfer: "+String.valueOf(result_xfer));
+                            }
+                            else
+                            {
+                                System.out.println(transferred.get() + " bytes sent");
+                            }
+                           */ 
+                            
+                        }
+                    }
+                }
+                catch(Exception e)
+                {
+                    System.out.println("ERROR: Something bad happened trying to connect to USB device...");
+                    System.out.println(e.getMessage());
+                }
+            }
+            //These would be done after we are done with device (i.e. shutdown)
+            int mycount = 0;
+            while(mycount<300)
+            {
+                try{
+                    mycount++;
+                    sleep(1000);
+                    System.out.println("Gamepad Left X: "+String.valueOf(this.gamepad_data.thumbleft_x));
+                }
+                catch(Exception e)
+                {
+                    
+                }
+            }
+            
+            //-------------start shutdown
+            System.out.println("Shutting down USB HID....");
+            // Release the interface
+            myresult = LibUsb.releaseInterface(usbDeviceHandle, 0);
+            if (myresult != LibUsb.SUCCESS)
+            {
+                //problem;
+            }
+
+            // Re-attach kernel driver if needed
+            // Check if kernel driver is attached to the interface
+            int attached = LibUsb.kernelDriverActive(usbDeviceHandle, 0);
+            if (attached == 1)
+            {
+                LibUsb.attachKernelDriver(usbDeviceHandle, 0);
+                if (result != LibUsb.SUCCESS)
+                {
+                    //error
+                }
+            }
+            //-------------done shutdown
+            System.out.println("Done Setting up usb HID...");
+            
+            System.out.println("Try bluetooth...");
+            //http://www.aviyehuda.com/blog/2010/01/08/connecting-to-bluetooth-devices-with-java/
+            System.out.println("This isnt working yet.... :(");
+            /*
+            try{
+                LocalDevice localDevice = LocalDevice.getLocalDevice();
+                DiscoveryAgent agent = localDevice.getDiscoveryAgent();
+                agent.startInquiry(DiscoveryAgent.GIAC, new BluetoothDiscoverListener());
+                try {
+                    synchronized(lock){
+                        lock.wait();
+                    }
+                }
+                catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                
+                System.out.println("Device Inquiry Completed. ");
+                
+                RemoteDevice[] remoteDevices = agent.retrieveDevices(0);
+                System.out.println("# of Found Devices: "+String.valueOf(remoteDevices.length));
+                
+                if(remoteDevices.length>0)
+                {
+                    //HumanInterfaceDeviceService 0x1124 
+                    UUID[] uuidSet = new UUID[1];
+                    uuidSet[0]=new UUID(0x1124); //HumanInterfaceDeviceService
+
+                    int[] attrIDs =  new int[] {
+                            0x0100 // Service name
+                    };
+                    for(int i=0;i<remoteDevices.length;i++)
+                    {
+                        agent.searchServices(null,uuidSet,remoteDevices[i], new BluetoothDiscoverListener());
+                        try {
+                            synchronized(lock){
+                                lock.wait();
+                            }
+                        }
+                        catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                
+                
+            }
+            catch(Exception e)
+            {
+                e.printStackTrace();
+            }
+            
+    
+
+            */
+            System.out.println("...done bluetooth!");
+            
             //has Radio RFM
             this.initRFMBRegisters();
             //set up timer
@@ -1178,6 +1439,44 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             rxPacketTimer.start();
             log.fine("Timer started...");
             //no PWM controller
+            //Set up i2C for joystick reading ADC
+            try{
+                gpioProviderADC = new ADS1015GpioProvider(I2CBus.BUS_1,ADS1015GpioProvider.ADS1015_ADDRESS_0x48);
+                
+                gpioProviderADC.setProgrammableGainAmplifier(ProgrammableGainAmplifierValue.PGA_4_096V, ADS1015Pin.ALL);
+                gpioProviderADC.setMonitorInterval(100);
+                gpioProviderADC.setEventThreshold(50, ADS1015Pin.ALL);
+                // create analog pin value change listener
+                GpioPinListenerAnalog listener = new GpioPinListenerAnalog()
+                {
+                    @Override
+                    public void handleGpioPinAnalogValueChangeEvent(GpioPinAnalogValueChangeEvent event)
+                    {
+                         System.out.println("get val...");
+                        // RAW value
+                        double value = event.getValue();
+
+                        // percentage
+                        double percent =  ((value * 100) / ADS1015GpioProvider.ADS1015_RANGE_MAX_VALUE);
+
+                        // approximate voltage ( *scaled based on PGA setting )
+                        double voltage = gpioProviderADC.getProgrammableGainAmplifier(event.getPin()).getVoltage() * (percent/100);
+
+                        // display output
+                        System.out.println(" (" + event.getPin().getName() +") : VOLTS=" + String.valueOf(voltage) + "  | PERCENT=" + String.valueOf(percent) + "% | RAW=" + value + "       ");
+                    }
+                };
+                    // create gpio controller
+                final GpioController gpiooye = GpioFactory.getInstance();
+               
+                gpiooye.provisionAnalogInputPin(gpioProvider, ADS1015Pin.INPUT_A0, "MyAnalogInput-A0").addListener(listener);
+                gpiooye.provisionAnalogInputPin(gpioProvider, ADS1015Pin.INPUT_A1, "MyAnalogInput-A1").addListener(listener);
+                
+            }
+            catch(Exception e)
+            {
+                
+            }
         }
         else
         {
@@ -1281,9 +1580,22 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
        
        
             
-        
-        
-        
+        try{
+            System.out.println("---Begin Test Loop Thumbstick----");
+            int count = 0;
+            while(count < 100)
+            {
+                //THIS WORK!!
+                System.out.println(String.valueOf(gpioProviderADC.getValue(ADS1015Pin.INPUT_A0)));
+                Thread.sleep(1000);
+                count++;
+            }
+            //Thread.sleep(60000);
+        }
+        catch(Exception e)
+        {
+
+        }
         
         
         return result;
@@ -1357,6 +1669,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         }
         
     }
+    
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonDumpRegisters;
