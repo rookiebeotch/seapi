@@ -9,14 +9,26 @@ package seapi;
  *
  * @author jorge
  */
-public class StateMachine {
+public class StateMachineController {
+    //states
     final static int        SEAPI_STATE_INIT    =   100;
     final static int        SEAPI_STATE_TX      =   101;
     final static int        SEAPI_STATE_RX      =   102;
     final static int        SEAPI_STATE_IDLE    =   103;
+    //events
+    final static int        SEAPI_EVENT_PKT_RCV     =   1000;
+    final static int        SEAPI_EVENT_TIMER_CTL   =   1001;
+    final static int        SEAPI_EVENT_INIT_DONE   =   1002;
     
-    private int current_state     = SEAPI_STATE_INIT; // 2. states
+    //vars
+    private int current_state;
     
+    
+    StateMachineController(){
+        current_state   =   SEAPI_STATE_INIT;
+        //make sure timers are all off at start
+        //clear any counters
+    }
     
     public void processEvent(int event)
     {

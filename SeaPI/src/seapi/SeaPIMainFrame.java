@@ -108,6 +108,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private ADS1015GpioProvider gpioProviderADC;
     private Timer               rxPacketTimer;
     public static Logger        log;
+
     private static Object lock=new Object();
     
     //USB IDs
@@ -124,6 +125,9 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     
     
     
+
+    private StateMachineController      sm;
+
     //Msg Protocol
     //Byte1 msg type 00 to 255
     
@@ -151,6 +155,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
 
         //Init I2C for PWM/Servo
         seaPiInit(SEAPI_MASTER_MODE);
+        
+        sm = new StateMachineController();
         
     }
 
