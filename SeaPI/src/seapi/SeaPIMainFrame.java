@@ -122,7 +122,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     //controller  idVendor=0x0079  idProduct=0x181c Mfr=0x1, Product=0x2, SerialNumber=0
     //Product: BBC-GAME
     //Manufacturer: ZhiXu
-    
+    private Timer           smSendControllerDataTimer;
     
     
 
@@ -156,8 +156,12 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         //Init I2C for PWM/Servo
         seaPiInit(SEAPI_MASTER_MODE);
         
-        sm = new StateMachineController();
+        sm = new StateMachineController(this.gamepad_data);
         
+        //start Timer
+        smSendControllerDataTimer = new Timer(100,new StateMachineTimerControlDataListenter(sm));
+        sm.setControlDataTimer(smSendControllerDataTimer);
+        sm.processEvent(StateMachineController.SEAPI_EVENT_INIT_DONE);
     }
 
     /**
@@ -1344,40 +1348,44 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 }
             }
             //These would be done after we are done with device (i.e. shutdown)
+            
+            //Testing controller
+            /*
             int mycount = 0;
             while(mycount<300)
             {
                 try{
                     mycount++;
                     sleep(1000);
-                    System.out.println("Gamepad Left X: "+String.valueOf(this.gamepad_data.thumbleft_x));
+                    if(0<this.gamepad_data.getButton_x())System.out.println("X");
+                    if(0<this.gamepad_data.getButton_y())System.out.println("Y");
+                    if(0<this.gamepad_data.getButton_a())System.out.println("A");
+                    if(0<this.gamepad_data.getButton_b())System.out.println("B");
+                    if(0<this.gamepad_data.getButton_start())System.out.println("START");
+                    if(0<this.gamepad_data.getButton_select())System.out.println("SELECT");
+                    if(0<this.gamepad_data.getButton_left1())System.out.println("L1");
+                    if(0<this.gamepad_data.getButton_right1())System.out.println("R1");
+                    if(0<this.gamepad_data.getButton_leftthumb())System.out.println("LB");
+                    if(0<this.gamepad_data.getButton_rightthumb())System.out.println("RB");
+                    
+                    if(128!=this.gamepad_data.getThumbleft_x())System.out.println("L Stick X");
+                    if(128!=this.gamepad_data.getThumbleft_y())System.out.println("L Stick Y");
+                    
+                    if(128!=this.gamepad_data.getThumbright_x())System.out.println("R Stick X");
+                    if(128!=this.gamepad_data.getThumbright_y())System.out.println("R Stick Y");
+                    
+                    if(15!=this.gamepad_data.getDpad())System.out.println("D-PAD");
+                    
                 }
                 catch(Exception e)
                 {
                     
                 }
-            }
             
-            //-------------start shutdown
-            System.out.println("Shutting down USB HID....");
-            // Release the interface
-            myresult = LibUsb.releaseInterface(usbDeviceHandle, 0);
-            if (myresult != LibUsb.SUCCESS)
-            {
-                //problem;
             }
-
-            // Re-attach kernel driver if needed
-            // Check if kernel driver is attached to the interface
-            int attached = LibUsb.kernelDriverActive(usbDeviceHandle, 0);
-            if (attached == 1)
-            {
-                LibUsb.attachKernelDriver(usbDeviceHandle, 0);
-                if (result != LibUsb.SUCCESS)
-                {
-                    //error
-                }
-            }
+            */
+            
+            
             //-------------done shutdown
             System.out.println("Done Setting up usb HID...");
             
@@ -1585,7 +1593,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         }
        
        
-            
+         /*  
         try{
             System.out.println("---Begin Test Loop Thumbstick----");
             int count = 0;
@@ -1602,7 +1610,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         {
 
         }
-        
+        */
         
         return result;
     }
@@ -1636,6 +1644,32 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             log.fine("Bad servo params! Servo #"+String.valueOf(servo_number)+" Pos:"+String.valueOf(position));
         }
         //servo numbers 1 -6
+    }
+    public void close()
+    {
+        int result;
+        //Shutdown things here like USB HID
+        //-------------start shutdown
+            System.out.println("Shutting down USB HID....");
+            // Release the interface
+            result = LibUsb.releaseInterface(usbDeviceHandle, 0);
+            if (result != LibUsb.SUCCESS)
+            {
+                //problem;
+            }
+
+            // Re-attach kernel driver if needed
+            // Check if kernel driver is attached to the interface
+            int attached = LibUsb.kernelDriverActive(usbDeviceHandle, 0);
+            if (attached == 1)
+            {
+                LibUsb.attachKernelDriver(usbDeviceHandle, 0);
+                if (result != LibUsb.SUCCESS)
+                {
+                    //error
+                }
+            }
+        
     }
     public void processMsg(byte[] msg)
     {
