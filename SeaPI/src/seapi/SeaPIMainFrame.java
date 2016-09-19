@@ -68,6 +68,14 @@ import org.usb4java.DeviceList;
 import org.usb4java.LibUsb;
 import org.usb4java.LibUsbException;
 import org.usb4java.Transfer;
+import static java.lang.Math.round;
+import static java.lang.Thread.sleep;
+import static java.lang.Math.round;
+import static java.lang.Thread.sleep;
+import static java.lang.Math.round;
+import static java.lang.Thread.sleep;
+import static java.lang.Math.round;
+import static java.lang.Thread.sleep;
 
 /**
  *
@@ -122,7 +130,6 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     //controller  idVendor=0x0079  idProduct=0x181c Mfr=0x1, Product=0x2, SerialNumber=0
     //Product: BBC-GAME
     //Manufacturer: ZhiXu
-    private Timer           smSendControllerDataTimer;
     
     
 
@@ -157,11 +164,9 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         seaPiInit(SEAPI_MASTER_MODE);
         
         sm = new StateMachineController(this.gamepad_data);
-        
-        //start Timer
-        smSendControllerDataTimer = new Timer(100,new StateMachineTimerControlDataListenter(sm));
-        sm.setControlDataTimer(smSendControllerDataTimer);
+       
         sm.processEvent(StateMachineController.SEAPI_EVENT_INIT_DONE);
+        sm.processEvent(StateMachineController.SEAPI_EVENT_START);
     }
 
     /**

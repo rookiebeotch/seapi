@@ -176,37 +176,46 @@ public class ControllerData {
         thumbright_x        =   in_data.get(5)& 0xff;
         thumbright_y        =   in_data.get(6)& 0xff;
         
-        button_x_previous = button_x;
+        button_x_previous   = button_x;
         button_x            =   in_data.get(0)&MASK_X_BUTTON&0xff;
         if(button_x_previous>0 && button_x==0)button_x_pressed = true;
             
         
         button_y_previous = button_y;
         button_y            =   in_data.get(0)&MASK_Y_BUTTON&0xff;
+        if(button_y_previous>0 && button_y==0)button_y_pressed = true;
         
         button_a_previous = button_a;
         button_a            =   in_data.get(0)&MASK_A_BUTTON&0xff;
+        if(button_a_previous>0 && button_a==0)button_a_pressed = true;
         
         button_b_previous = button_b;
         button_b            =   in_data.get(0)&MASK_B_BUTTON&0xff;
+        if(button_b_previous>0 && button_b==0)button_b_pressed = true;
         
         button_left1_previous = button_left1;
         button_left1        =   in_data.get(0)&MASK_L1_BUTTON&0xff;
+        if(button_left1_previous>0 && button_left1==0)button_left1_pressed = true;
         
         button_right1_previous = button_right1;
         button_right1       =   in_data.get(0)&MASK_R1_BUTTON&0xff;
+        if(button_right1_previous>0 && button_right1==0)button_right1_pressed = true;
         
         button_start_previous = button_start;
         button_start        =   in_data.get(1)&MASK_START_BUTTON&0xff;
+        if(button_start_previous>0 && button_start==0)button_start_pressed = true;
         
         button_select_previous = button_select;
         button_select       =   in_data.get(1)&MASK_SELECT_BUTTON&0xff;
+        if(button_select_previous>0 && button_select==0)button_select_pressed = true;
         
         button_leftthumb_previous = button_leftthumb;
         button_leftthumb    =   in_data.get(1)&MASK_LB_BUTTON&0xff;
+        if(button_leftthumb_previous>0 && button_leftthumb==0)button_leftthumb_pressed = true;
         
         button_rightthumb_previous = button_rightthumb;
         button_rightthumb   =   in_data.get(1)&MASK_RB_BUTTON&0xff;
+        if(button_rightthumb_previous>0 && button_rightthumb==0)button_rightthumb_pressed = true;
         
         dpad                =   in_data.get(2)&0xff;
         
@@ -323,35 +332,35 @@ public class ControllerData {
         
         
         if(this.isButton_a_pressed())
-            button_msg[0] = (byte)((byte)button_msg[0]&(byte)0b00100000);
+            button_msg[0] = (byte)((byte)button_msg[0]|(byte)0b00100000);
         
         if(this.isButton_b_pressed())
-            button_msg[0] = (byte)((byte)button_msg[0]&(byte)0b00010000);
+            button_msg[0] = (byte)((byte)button_msg[0]|(byte)0b00010000);
         
         if(this.isButton_x_pressed())
-            button_msg[0] = (byte)((byte)button_msg[0]&(byte)0b10000000);
+            button_msg[0] = (byte)((byte)button_msg[0]|(byte)0b10000000);
         
         if(this.isButton_y_pressed())
-            button_msg[0] = (byte)((byte)button_msg[0]&(byte)0b01000000);
+            button_msg[0] = (byte)((byte)button_msg[0]|(byte)0b01000000);
         
         if(this.isButton_left1_pressed())
-            button_msg[0] = (byte)((byte)button_msg[0]&(byte)0b00001000);
+            button_msg[0] = (byte)((byte)button_msg[0]|(byte)0b00001000);
         
         if(this.isButton_right1_pressed())
-            button_msg[0] = (byte)((byte)button_msg[0]&(byte)0b00000100);
+            button_msg[0] = (byte)((byte)button_msg[0]|(byte)0b00000100);
         
         if(this.isButton_select_pressed())
-            button_msg[0] = (byte)((byte)button_msg[0]&(byte)0b00000010);
+            button_msg[0] = (byte)((byte)button_msg[0]|(byte)0b00000010);
         
         if(this.isButton_start_pressed())
-            button_msg[0] = (byte)((byte)button_msg[0]&(byte)0b00000001);
+            button_msg[0] = (byte)((byte)button_msg[0]|(byte)0b00000001);
         
         
         if(this.isButton_leftthumb_pressed())
-            button_msg[1] = (byte)((byte)button_msg[1]&(byte)0b10000000);
+            button_msg[1] = (byte)((byte)button_msg[1]|(byte)0b10000000);
         
         if(this.isButton_rightthumb_pressed())
-            button_msg[1] = (byte)((byte)button_msg[1]&(byte)0b01000000);
+            button_msg[1] = (byte)((byte)button_msg[1]|(byte)0b01000000);
         
         return button_msg;
     }
