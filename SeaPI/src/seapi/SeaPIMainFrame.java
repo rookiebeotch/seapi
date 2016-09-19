@@ -96,7 +96,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private static final int    ERROR_CODE_FAILURE          =   -1;
     private static final int    ERROR_CODE_WARNING          =   1;
    
-    private final static byte   SPI_READ_CMD                = (byte)0x00;
+    public final static byte   SPI_READ_CMD                = (byte)0x00;
     public final static byte    SPI_WRITE_CMD               = (byte)0x80;
     
     public  int                 SEAPI_MASTER_MODE           =   0;
@@ -163,7 +163,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         //Init I2C for PWM/Servo
         seaPiInit(SEAPI_MASTER_MODE);
         
-        sm = new StateMachineController(this.gamepad_data);
+        sm = new StateMachineController(SEAPI_MASTER_MODE,this.gamepad_data);
        
         sm.processEvent(StateMachineController.SEAPI_EVENT_INIT_DONE);
         sm.processEvent(StateMachineController.SEAPI_EVENT_START);
@@ -1502,10 +1502,13 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             //vehicle
             //has radio RFM
             this.initRFMBRegisters();
-            //set up timer
-            this.rxPacketTimer = new Timer(SEAPI_RFM22B_POLL_TIME_MSEC,new RcvListener(this));
-            rxPacketTimer.start();
-            log.fine("Timer started...");
+            //Skip Timer....Since we have State Machine
+            /*
+                //set up timer
+                this.rxPacketTimer = new Timer(SEAPI_RFM22B_POLL_TIME_MSEC,new RcvListener(this));
+                rxPacketTimer.start();
+                log.fine("Timer started...");
+            */    
             //has PWM controller(I2C)
              //PMW Controller
             try{       

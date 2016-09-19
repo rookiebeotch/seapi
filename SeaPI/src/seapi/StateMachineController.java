@@ -12,6 +12,7 @@ import java.util.List;
 import static seapi.SeaPIMainFrame.SPI_WRITE_CMD;
 import static seapi.SeaPIMainFrame.log;
 import javax.swing.Timer;
+import static seapi.SeaPIMainFrame.SPI_READ_CMD;
 /**
  *
  * @author jorge
@@ -29,6 +30,7 @@ public class StateMachineController {
     final static int        SEAPI_EVENT_INIT_DONE   =   1002;
     final static int        SEAPI_EVENT_START       =   1003;
     final static int        SEAPI_EVENT_RCV_EXPIRED       =   1004;
+    final static int        SEAPI_EVENT_TIMER_STATUS_DATA = 1005;
     final static int        SEAPI_EVENT_BUTTON_PRESSED  =   2000;
     
     //vars
@@ -37,18 +39,23 @@ public class StateMachineController {
     private Timer           control_data_timer;
     private Timer           rcvExpiredTimer;
     List<byte[]>            pendingTransmitBytes;
-    StateMachineController(ControllerData in_dataCntlr){
+    private int             control_mode;
+    private RFPacketPendingThread   rcvPktThread;
+    StateMachineController(int mode,ControllerData in_dataCntlr){
+        control_mode = mode;
         current_state   =   SEAPI_STATE_INIT;
         myControlData   = in_dataCntlr;
         //make sure timers are all off at start
         //clear any counters
         pendingTransmitBytes = new ArrayList();
         
-        control_data_timer = new Timer(100,new StateMachineTimerControlDataListener(this));
+        control_data_timer = new Timer(500,new StateMachineTimerControlDataListener(this));
         control_data_timer.setRepeats(false);
         
-        rcvExpiredTimer = new Timer(10,new StateMachineTimerRcvWaitListener(this));
+        rcvExpiredTimer = new Timer(500,new StateMachineTimerRcvWaitListener(this));
         rcvExpiredTimer.setRepeats(false);
+        
+        rcvPktThread = new RFPacketPendingThread(this);
     }
     private String stateToString(int state)
     {
@@ -78,27 +85,53 @@ public class StateMachineController {
     }
     public void processEvent(int event)
     {
-        System.out.println("DEBUG: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
-        //call the current state process event
-        switch(current_state)
+        
+        
+        if(control_mode==1)
         {
-            case SEAPI_STATE_INIT:
-                current_state   =   state_init(event,current_state);
-                break;
-            case SEAPI_STATE_TX:
-                current_state   =   state_tx(event,current_state);
-                break;    
-            case SEAPI_STATE_RX:
-                current_state   =   state_rx(event,current_state);
-                break;        
-            case SEAPI_STATE_IDLE:
-                current_state   =   state_idle(event,current_state);
-                break;        
-            default:
-                   //do nothing
-                
-                
+            //call the current state process event
+            switch(current_state)
+            {
+                case SEAPI_STATE_INIT:
+                    current_state   =   state_init(event,current_state);
+                    break;
+                case SEAPI_STATE_TX:
+                    current_state   =   state_tx(event,current_state);
+                    break;    
+                case SEAPI_STATE_RX:
+                    current_state   =   state_rx(event,current_state);
+                    break;        
+                case SEAPI_STATE_IDLE:
+                    current_state   =   state_idle(event,current_state);
+                    break;        
+                default:
+                       //do nothing
+
+            }
         }
+        else
+        {
+            //call the current state process event
+            switch(current_state)
+            {
+                case SEAPI_STATE_INIT:
+                    current_state   =   state_init_vehicle(event,current_state);
+                    break;
+                case SEAPI_STATE_TX:
+                    current_state   =   state_tx_vehicle(event,current_state);
+                    break;    
+                case SEAPI_STATE_RX:
+                    current_state   =   state_rx_vehicle(event,current_state);
+                    break;        
+                case SEAPI_STATE_IDLE:
+                    current_state   =   state_idle_vehicle(event,current_state);
+                    break;        
+                default:
+                       //do nothing
+
+            }
+        }
+        
     }
     
     public  int state_init(int event,int current_state)
@@ -125,9 +158,41 @@ public class StateMachineController {
         
         return next_state;
     }
+    public  int state_init_vehicle(int event,int current_state)
+    {
+        System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        int next_state = current_state;
+        
+        switch(event)
+        {
+            case SEAPI_EVENT_INIT_DONE:
+                next_state = SEAPI_STATE_IDLE;
+                
+                break;
+                
+            default:
+                //do nada!!!
+        }
+        
+        return next_state;
+    }
     public  int state_tx(int event,int current_state)
     {
         System.out.println("DEBUG: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        int next_state = current_state;
+        
+        switch(event)
+        {
+            
+            default:
+                //do nada!!!
+        }
+        
+        return next_state;
+    }
+    public  int state_tx_vehicle(int event,int current_state)
+    {
+        System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
         int next_state = current_state;
         
         switch(event)
@@ -147,6 +212,13 @@ public class StateMachineController {
         switch(event)
         {
             case SEAPI_EVENT_RCV_EXPIRED:
+                //check for rcvd packet via spi rfm
+                if(this.rcvPending())
+                {
+                    //get message
+                    byte[] indata = rcvMessage();
+                    //TODO: what do we do with incoming data???
+                }
                 //Send one packet
                 sendBufferedPacket();
                 this.rcvExpiredTimer.restart();
@@ -158,6 +230,37 @@ public class StateMachineController {
                 this.pendingTransmitBytes.add(myControlData.getAnalogMessage());
                 this.pendingTransmitBytes.add(myControlData.getButtonMessage());
                 this.control_data_timer.restart();
+                break;
+            default:
+                //do nada!!!
+        }
+        
+        return next_state;
+    }
+    public  int state_rx_vehicle(int event,int current_state)
+    {
+        System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        int next_state = current_state;
+        
+        switch(event)
+        {
+            
+            case SEAPI_EVENT_TIMER_STATUS_DATA:
+                
+                //Grab data from data control for analog controls
+                //grab button info
+                this.control_data_timer.restart();
+                break;
+            case SEAPI_EVENT_PKT_RCV:
+                //kill thread if running
+                this.rcvPktThread.abort();
+                //get packet
+                byte[] data = this.rcvMessage();
+                if(data!=null)System.out.println(Arrays.toString(data));
+                //send any data
+                this.sendBufferedPacket();
+                next_state = SEAPI_STATE_RX;
+                this.rcvPktThread.start();
                 break;
             default:
                 //do nada!!!
@@ -185,10 +288,34 @@ public class StateMachineController {
                 //grab button info
                 this.pendingTransmitBytes.add(myControlData.getAnalogMessage());
                 this.pendingTransmitBytes.add(myControlData.getButtonMessage());
-                
+                this.control_data_timer.restart();
                 
                 //then go to state TX
                 next_state = SEAPI_STATE_IDLE;
+                break;
+            
+            default:
+                //do nada!!!
+        }
+        
+        return next_state;
+    }
+    public  int state_idle_vehicle(int event,int current_state)
+    {
+        System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        int next_state = current_state;
+        
+        switch(event)
+        {
+            case SEAPI_EVENT_START:
+                next_state = SEAPI_STATE_RX;
+                this.rcvPktThread.start();
+                break;
+            case SEAPI_EVENT_TIMER_STATUS_DATA:
+                //need to send status data
+                //TODO
+                
+                
                 break;
             
             default:
@@ -261,5 +388,60 @@ public class StateMachineController {
         
         
         return 0;
+    }
+    
+    private boolean rcvPending()
+    {
+        boolean packet_rcvd = false;
+        byte packet[] = new byte[2];
+        //look for valid pkt register
+        packet[0] = (byte)(0x03|SeaPIMainFrame.SPI_READ_CMD);
+        packet[1] = (byte)0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        if((0x02&packet[1])>0)
+        {
+            packet_rcvd = true;
+        }
+        
+        
+        return packet_rcvd;
+    }
+    
+    private byte[] rcvMessage()
+    {
+        byte packet[] = new byte[2];
+        int pktlength;
+        //look for pkt length register value
+        packet[0] = (byte)(0x4b|SPI_READ_CMD);
+        packet[1] = (byte)0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        //check size
+        pktlength = packet[1];
+        if(pktlength<1)
+            return null;
+        
+        byte rxdata[] = new byte[pktlength+1];
+        rxdata[0] = (byte)0x7f;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,rxdata,pktlength+1);
+        
+        
+        
+
+        //clear
+        //clear rx fifo
+        packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
+        packet[1]   =   (byte) (0x02);
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+
+        packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+
+        //goto idle then rx mode
+        packet[0]   =   (byte)(0x07|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x07;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        return rxdata;
     }
 }
