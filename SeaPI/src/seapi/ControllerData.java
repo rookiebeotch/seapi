@@ -171,10 +171,10 @@ public class ControllerData {
         //down left 05
         //down right 03
         
-        thumbleft_x         =   in_data.get(3)& 0xff;
-        thumbleft_y         =   in_data.get(4)& 0xff;
-        thumbright_x        =   in_data.get(5)& 0xff;
-        thumbright_y        =   in_data.get(6)& 0xff;
+        thumbleft_x         =   in_data.get(3)& 0x00ff;
+        thumbleft_y         =   in_data.get(4)& 0x00ff;
+        thumbright_x        =   in_data.get(5)& 0x00ff;
+        thumbright_y        =   in_data.get(6)& 0x00ff;
         
         button_x_previous   = button_x;
         button_x            =   in_data.get(0)&MASK_X_BUTTON&0xff;
@@ -366,19 +366,21 @@ public class ControllerData {
     }
     public byte[] getAnalogMessage()
     {
-        byte[] analog_msg = new byte[5];
+        byte[] analog_msg = new byte[6];
         
+        //first byte type
+        analog_msg[0] = SeaPIMainFrame.SEAPI_MSGTYPE_ANALOG_CTL;
         //0 is left stick x
         //1 is left stick y
         //2 is right stick x
         //3 is right stick y
         //4 is dpad
-        
-        analog_msg[0] = (byte)this.getThumbleft_x();
-        analog_msg[1] = (byte)this.getThumbleft_y();
-        analog_msg[2] = (byte)this.getThumbright_x();
-        analog_msg[3] = (byte)this.getThumbright_y();
-        analog_msg[4] = (byte)this.getDpad();
+        System.out.println("Thumb: "+String.valueOf(this.getThumbleft_x()));
+        analog_msg[1] = (byte)this.getThumbleft_x();
+        analog_msg[2] = (byte)this.getThumbleft_y();
+        analog_msg[3] = (byte)this.getThumbright_x();
+        analog_msg[4] = (byte)this.getThumbright_y();
+        analog_msg[5] = (byte)this.getDpad();
         
         return analog_msg;
     }

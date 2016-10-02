@@ -76,6 +76,8 @@ import static java.lang.Math.round;
 import static java.lang.Thread.sleep;
 import static java.lang.Math.round;
 import static java.lang.Thread.sleep;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
 
 /**
  *
@@ -102,14 +104,15 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     public  int                 SEAPI_MASTER_MODE           =   0;
     
     private static final byte   RFM22_REG05_VAL             =   (byte)0x02;
-    private static final byte   SEAPI_MSGTYPE_SERVO         =   (byte)0x01;
-    private static final byte   SEAPI_MSGTYPE_MOTOR         =   (byte)0x02;
-    private static final byte   SEAPI_MSGTYPE_BALLAST       =   (byte)0x03;
-    private static final byte   SEAPI_MSGTYPE_LIGHTS        =   (byte)0x04;
+    public static final byte   SEAPI_MSGTYPE_SERVO         =   (byte)0x01;
+    public static final byte   SEAPI_MSGTYPE_MOTOR         =   (byte)0x02;
+    public static final byte   SEAPI_MSGTYPE_BALLAST       =   (byte)0x03;
+    public static final byte   SEAPI_MSGTYPE_LIGHTS        =   (byte)0x04;
+    public static final byte   SEAPI_MSGTYPE_ANALOG_CTL    =   (byte)0x05;
     private static final int    SEAPI_MIN_SERVO_NUMBER      =    1;
     private static final int    SEAPI_MAX_SERVO_NUMBER      =   2;
-    private static final int    SEAPI_MIN_SERVO_POS_MSEC    =   950;
-    private static final int    SEAPI_MAX_SERVO_POS_MSEC    =   2600;
+    private static final int    SEAPI_MIN_SERVO_POS_MSEC    =   100;//old 950
+    private static final int    SEAPI_MAX_SERVO_POS_MSEC    =   3000;//old 2600
     private static final int    SEAPI_SPI_SPEED_HZ          =   10000000;
     private static final int    SEAPI_RFM22B_POLL_TIME_MSEC =   100;
     private PCA9685GpioProvider gpioProvider;
@@ -133,7 +136,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     
     
 
-    private StateMachineController      sm;
+    private volatile StateMachineController      sm;
 
     //Msg Protocol
     //Byte1 msg type 00 to 255
@@ -155,7 +158,22 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         initComponents();
         //init logger
         log = Logger.getLogger(SeaPIMainFrame.class.getName());
-        log.setLevel(Level.SEVERE);
+        FileHandler fh; 
+        try {  
+
+            // This block configure the logger with handler and formatter  
+            fh = new FileHandler("SeaPILogFile.log");  
+            //log.addHandler(fh);
+            SimpleFormatter formatter = new SimpleFormatter();  
+            fh.setFormatter(formatter);  
+            log.setLevel(Level.ALL);
+            log.info("start...");
+
+        } 
+        catch (IOException e) {  
+            e.printStackTrace();  
+        }  
+        
         //init SPI for RF comms
         spiSetup();
         readConfigFile();
@@ -163,7 +181,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         //Init I2C for PWM/Servo
         seaPiInit(SEAPI_MASTER_MODE);
         
-        sm = new StateMachineController(SEAPI_MASTER_MODE,this.gamepad_data);
+        sm = new StateMachineController(SEAPI_MASTER_MODE,this.gamepad_data,this);
        
         sm.processEvent(StateMachineController.SEAPI_EVENT_INIT_DONE);
         sm.processEvent(StateMachineController.SEAPI_EVENT_START);
@@ -1111,7 +1129,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         //clear fifos
         packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
-        packet[1]   =   (byte) (0x00|0x03);
+        packet[1]   =   (byte) (0x03);
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         
         packet[0]   =   (byte)(0x08|SPI_WRITE_CMD);
@@ -1628,29 +1646,25 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         //1850 middle
         //950  right
 
-        if(servo_number>=SEAPI_MIN_SERVO_NUMBER && servo_number<=SEAPI_MAX_SERVO_NUMBER &&
-                position>=SEAPI_MIN_SERVO_POS_MSEC && position<=SEAPI_MAX_SERVO_POS_MSEC)
-        {
-            //The value fed to setPWM is millisecond duration
-            switch(servo_number){
-                case 1:
-                    log.fine("Servo 1 (4) Moving ..."+String.valueOf(position));
-                    gpioProvider.setPwm(PCA9685Pin.PWM_04, position);
-                    break;
-                case 2:
-                    log.fine("Servo 2 (5) Moving ..."+String.valueOf(position));
-                    gpioProvider.setPwm(PCA9685Pin.PWM_05, position);
-                    break;    
-                default:
-                    log.fine("Servo not defined...");
-                    break;
-            }
+        if(SEAPI_MIN_SERVO_POS_MSEC>position)position=SEAPI_MIN_SERVO_POS_MSEC;
+       // if(SEAPI_MAX_SERVO_POS_MSEC<position)position=SEAPI_MAX_SERVO_POS_MSEC;
+        
+        
+        //The value fed to setPWM is millisecond duration
+        switch(servo_number){
+            case 1:
+                log.info("Servo 1 (4) Moving ..."+String.valueOf(position));
+                gpioProvider.setPwm(PCA9685Pin.PWM_04, position);
+                break;
+            case 2:
+                log.info("Servo 2 (5) Moving ..."+String.valueOf(position));
+                gpioProvider.setPwm(PCA9685Pin.PWM_05, position);
+                break;    
+            default:
+                log.fine("Servo not defined...");
+                break;
         }
-        else
-        {
-            //bad params
-            log.fine("Bad servo params! Servo #"+String.valueOf(servo_number)+" Pos:"+String.valueOf(position));
-        }
+        
         //servo numbers 1 -6
     }
     public void close()
@@ -1681,14 +1695,16 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     }
     public void processMsg(byte[] msg)
     {
-        log.fine("I gots a message!!!");
+        
+        
         if(msg.length<1)
         {
             //emtpy msg....
             return;
         }
+        log.fine("Processing Msg Type: "+String.valueOf(msg[1]));
         //first byte is msg type
-        int msgtype = msg[0];
+        int msgtype = msg[1];
         int datalength = msg.length-1;
         
         switch(msgtype)
@@ -1698,22 +1714,42 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 for(int servo=1;servo<=Math.floor(datalength/2);servo++)
                 {
                     //grab two bytes
-                    log.fine("Grabbing bytes "+String.valueOf(servo*2-1)+" and "+String.valueOf(servo*2));
-                    log.fine("Grabbing these bytes-> "+String.format("%02X",(byte)(msg[servo*2]))+" "+String.format("%02X",(byte)(msg[servo*2-1])));
+                    log.info("Grabbing bytes "+String.valueOf(servo*2-1)+" and "+String.valueOf(servo*2));
+                    log.info("Grabbing these bytes-> "+String.format("%02X",(byte)(msg[servo*2]))+" "+String.format("%02X",(byte)(msg[servo*2-1])));
                     short servo_pos = (short)( (msg[servo*2]<<8) | (0xff&msg[servo*2-1]) );
                     
-                    log.fine("Servo "+String.valueOf(servo)+" to move "+String.valueOf(servo_pos));
+                    log.info("Servo "+String.valueOf(servo)+" to move "+String.valueOf(servo_pos));
                     commandServo(servo,servo_pos);
                 }
                 break;
             case SeaPIMainFrame.SEAPI_MSGTYPE_BALLAST:
+                log.info("BALLAST: not implemented..");
                 break;
             case SeaPIMainFrame.SEAPI_MSGTYPE_MOTOR:
+                log.info("MOTOR: not implemented..");
                 break;
-                     
+            case SeaPIMainFrame.SEAPI_MSGTYPE_ANALOG_CTL:
+                //thumb left x dir stick msg[2]
+                int left_x = 0x00ff&msg[2];
+                int left_y = 0x00ff&msg[3];
+                //scale this , range is 1650, input is 0 255
+                commandServo(1,11*left_x);
+                //if(left_x<128)commandServo(1,0);
+                //if(left_x>128)commandServo(1,3000);
+                //if(left_x==128)commandServo(1,1850);
+                log.info("Commaind Servo 1 to "+String.valueOf(7*left_x+950)+" Input: "+String.valueOf(left_x));
+                
+                commandServo(2,11*left_y);
+                //if(left_y<128)commandServo(2,0);
+                //if(left_y>128)commandServo(2,3000);
+                //if(left_y==128)commandServo(2,1850);
+                log.info("Commaind Servo 2 to "+String.valueOf(7*left_y+950)+" Input: "+String.valueOf(left_y));
+                
+                
+                break;
             default:
                 //unknown msg type
-                log.fine("Unknown msg type "+String.valueOf(msgtype)+" rcvd!");
+                log.info("Unknown msg type "+String.valueOf(msgtype)+" rcvd!");
         }
         
     }

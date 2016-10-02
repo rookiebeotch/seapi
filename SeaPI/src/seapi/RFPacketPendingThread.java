@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 public class RFPacketPendingThread extends Thread {
 
     private boolean abort;
-    StateMachineController my_sm;
+    private volatile StateMachineController  my_sm;
     RFPacketPendingThread(StateMachineController in_sm){
         my_sm = in_sm;
         this.abort = false;
@@ -55,16 +55,25 @@ public class RFPacketPendingThread extends Thread {
         
         while(abort==false )
         {
+            
             packet[0] = (byte)(0x03|SeaPIMainFrame.SPI_READ_CMD);
             packet[1] = (byte)0x00;
             Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
             if((0x02&packet[1])>0)
             {
-                System.out.println("PACKET!!");
+                //System.out.println("PACKET!!");
                 my_sm.processEvent(StateMachineController.SEAPI_EVENT_PKT_RCV);
                 abort = true;
             }
-            
+            else
+            {
+                
+                try {
+                    Thread.sleep(20);
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(RFPacketPendingThread.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
         }
         System.out.println("Thread out of loop....");
         
