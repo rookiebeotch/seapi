@@ -127,6 +127,13 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     private static int      USB_HID_BBCCONTROLLER_IDPRODUCT =   0x181c;
     private static int      USB_HID_BBCCONTROLLER_MFR       =   0x1;
     private static int      USB_HID_BBCCONTROLLER_PRODUCT   =   0x2;
+    
+    private static short    USB_HID_XBOXCONTROLLER_IDVENDOR  =   (short)0x045e;
+    private static short    USB_HID_XBOXCONTROLLER_IDPRODUCT =   (short)0x028e;
+    private static byte     USB_HID_XBOXCONTROLLER_MFR       =   (byte)0x1;
+    private static byte     USB_HID_XBOXCONTROLLER_PRODUCT   =   (byte)0x2;
+    
+    
     private org.usb4java.Device          usbControllerDevice;
     private DeviceHandle    usbDeviceHandle;
     public volatile ControllerData  gamepad_data;
@@ -1271,6 +1278,21 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                     
                     if (result >= 0)
                     {
+                        int type_controller = this.usbControllerFilter(descriptor.idProduct(), descriptor.idVendor(), descriptor.iManufacturer(), descriptor.iProduct());
+                        if(0!=type_controller)
+                        {
+                            //valid controller
+                            System.out.println("This IS the Device we are looking for!!!");
+                            System.out.println(descriptor.dump());
+                            
+                            usbControllerDevice = device;
+                            ConfigDescriptor configDes = new ConfigDescriptor();
+                            LibUsb.getConfigDescriptor(usbControllerDevice, (byte)0, configDes);
+                            System.out.println("Config Descriptor: "+configDes.dump());
+                            //Set type of usb controller so we know how to parse data
+                            this.gamepad_data.setControllerType(type_controller);
+                        }
+                        /*
                         if(SeaPIMainFrame.USB_HID_BBCCONTROLLER_IDPRODUCT == descriptor.idProduct() && 
                            SeaPIMainFrame.USB_HID_BBCCONTROLLER_IDVENDOR == descriptor.idVendor() &&
                            SeaPIMainFrame.USB_HID_BBCCONTROLLER_MFR == descriptor.iManufacturer() &&
@@ -1286,6 +1308,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                             System.out.println("Config Descriptor: "+configDes.dump());
                            
                         }
+                        */
                         System.out.println("Vendor "+String.valueOf(descriptor.idVendor())+" Product ID: "+descriptor.idProduct());
                         System.out.println("Manufacturer: "+descriptor.iManufacturer()+"  Product: "+descriptor.iProduct());
                     }
@@ -1469,6 +1492,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             */
             System.out.println("...done bluetooth!");
             
+                        
             //has Radio RFM
             this.initRFMBRegisters();
             //set up timer
@@ -1640,6 +1664,28 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         return result;
     }
+    private int usbControllerFilter(short idProd,short idVen,byte iManu, byte iProd)
+    {
+        int cntlr_valid = 0;
+        
+        if(SeaPIMainFrame.USB_HID_BBCCONTROLLER_IDPRODUCT == idProd && 
+           SeaPIMainFrame.USB_HID_BBCCONTROLLER_IDVENDOR == idVen &&
+           SeaPIMainFrame.USB_HID_BBCCONTROLLER_MFR == iManu &&
+           SeaPIMainFrame.USB_HID_BBCCONTROLLER_PRODUCT == iProd )
+        {
+            cntlr_valid = ControllerData.BBC_TYPE;
+        }
+        
+        if(SeaPIMainFrame.USB_HID_XBOXCONTROLLER_IDPRODUCT == idProd && 
+           SeaPIMainFrame.USB_HID_XBOXCONTROLLER_IDVENDOR == idVen &&
+           SeaPIMainFrame.USB_HID_XBOXCONTROLLER_MFR == iManu &&
+           SeaPIMainFrame.USB_HID_XBOXCONTROLLER_PRODUCT == iProd )
+        {
+            cntlr_valid = ControllerData.XBOX_TYPE;
+        }
+        
+        return cntlr_valid;
+    }
     public void commandServo(int servo_number,int position)
     {
         //2600 is far left
@@ -1696,7 +1742,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     public void processMsg(byte[] msg)
     {
         
-        
+        int left_x;
+        int left_y;
         if(msg.length<1)
         {
             //emtpy msg....
@@ -1729,22 +1776,51 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                 log.info("MOTOR: not implemented..");
                 break;
             case SeaPIMainFrame.SEAPI_MSGTYPE_ANALOG_CTL:
-                //thumb left x dir stick msg[2]
-                int left_x = 0x00ff&msg[2];
-                int left_y = 0x00ff&msg[3];
-                //scale this , range is 1650, input is 0 255
-                commandServo(1,11*left_x);
-                //if(left_x<128)commandServo(1,0);
-                //if(left_x>128)commandServo(1,3000);
-                //if(left_x==128)commandServo(1,1850);
-                log.info("Commaind Servo 1 to "+String.valueOf(7*left_x+950)+" Input: "+String.valueOf(left_x));
+                //Second Byte tells controller type
                 
-                commandServo(2,11*left_y);
-                //if(left_y<128)commandServo(2,0);
-                //if(left_y>128)commandServo(2,3000);
-                //if(left_y==128)commandServo(2,1850);
-                log.info("Commaind Servo 2 to "+String.valueOf(7*left_y+950)+" Input: "+String.valueOf(left_y));
-                
+                switch((int)msg[2])
+                {
+                    case ControllerData.BBC_TYPE:
+                        //thumb left x dir stick msg[2]
+                        left_x = 0x00ff&msg[3];
+                        left_y = 0x00ff&msg[4];
+                        //scale this , range is 1650, input is 0 255
+                        commandServo(1,11*left_x);
+                        //if(left_x<128)commandServo(1,0);
+                        //if(left_x>128)commandServo(1,3000);
+                        //if(left_x==128)commandServo(1,1850);
+                        log.info("Commaind Servo 1 to "+String.valueOf(7*left_x+950)+" Input: "+String.valueOf(left_x));
+
+                        commandServo(2,11*left_y);
+                        //if(left_y<128)commandServo(2,0);
+                        //if(left_y>128)commandServo(2,3000);
+                        //if(left_y==128)commandServo(2,1850);
+                        log.info("Commaind Servo 2 to "+String.valueOf(7*left_y+950)+" Input: "+String.valueOf(left_y));
+
+                        break;
+                    case ControllerData.XBOX_TYPE:
+                        ByteBuffer bb = ByteBuffer.allocate(2);
+                        bb.order(ByteOrder.LITTLE_ENDIAN);
+                        
+                        bb.put(msg[3]);
+                        bb.put(msg[4]);
+                        left_x = (int)bb.getShort(0);
+                        
+                        commandServo(1,(int)(left_x/36)+1850);
+                        
+                        bb.clear();
+                        bb.put(msg[5]);
+                        bb.put(msg[6]);
+                        left_y = (int)bb.getShort(0);
+                        commandServo(2,(int)(left_y/36)+1850);
+                        
+                        
+                        break;
+                    default:
+                        //unknown
+                        break;
+                }
+                                
                 
                 break;
             default:

@@ -60,13 +60,30 @@ public class UsbInterruptThread extends Thread {
             
             if(LibUsb.SUCCESS == result)
             {
-                if(9==this.numBytesRcvd.get())
+                switch(gamepadData.getControllerType())
                 {
-                    //System.out.println("Got #"+String.valueOf(this.numBytesRcvd.get())+" of bytes.");
-                    //System.out.println("data "+String.valueOf(this.dataBuffer.get()));
-                    //post data to controller status...
-                    gamepadData.updateData(dataBuffer);
+                    case ControllerData.BBC_TYPE:
+                        if(9==this.numBytesRcvd.get())
+                        {
+                            //System.out.println("Got #"+String.valueOf(this.numBytesRcvd.get())+" of bytes.");
+                            //System.out.println("data "+String.valueOf(this.dataBuffer.get()));
+                            //post data to controller status...
+                            gamepadData.updateData(dataBuffer);
+                        }
+                        break;
+                    case ControllerData.XBOX_TYPE:
+                        if(20==this.numBytesRcvd.get())
+                        {
+                            //System.out.println("Got #"+String.valueOf(this.numBytesRcvd.get())+" of bytes.");
+                            //System.out.println("data "+String.valueOf(this.dataBuffer.get()));
+                            //post data to controller status...
+                            gamepadData.updateData(dataBuffer);
+                        }
+                        break;
+                    default:
+                        break;
                 }
+                
                 
             }
             try{

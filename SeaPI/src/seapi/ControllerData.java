@@ -6,12 +6,17 @@
 package seapi;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
 
 /**
  *
  * @author jorge
  */
 public class ControllerData {
+    public static final int     XBOX_TYPE  = 100;
+    public static final int     BBC_TYPE   = 101;
+    private int    controller_type;
     public int     button_x;
     public int     button_x_previous;
     public int     button_y;
@@ -64,6 +69,7 @@ public class ControllerData {
     
     ControllerData()
     {
+        controller_type     =   0;
         button_x            =   0;
         button_x_previous   =   0;
         button_y            =   0;
@@ -90,7 +96,27 @@ public class ControllerData {
         thumbright_y        =   128;
         dpad                =   0;
     }
-
+    public void setControllerType(int x)
+    {
+        switch(x)
+        {
+            case ControllerData.XBOX_TYPE:
+                controller_type = x;
+                break;
+            case ControllerData.BBC_TYPE:
+                controller_type = x;
+                break;
+            default:
+                controller_type = 0;
+                break;
+        }
+        
+    }
+    
+    public int getControllerType()
+    {
+        return controller_type;
+    }
     public int getButton_x() {
         return button_x;
     }
@@ -155,6 +181,84 @@ public class ControllerData {
     {
         if(in_data==null)
             return;
+        
+        switch(this.controller_type)
+        {
+            case ControllerData.BBC_TYPE:
+                updateBBCData(in_data);
+                break;
+            case ControllerData.XBOX_TYPE:
+                updateXboxData(in_data);
+                break;
+            default:
+                break;
+        }
+        
+        
+    }
+    private void updateXboxData(ByteBuffer in_data)
+    {
+        
+        //20 Byes long msg
+        
+        //Byte 3
+        byte XBOX_BUTTON_X = (byte)0x40;
+        byte XBOX_BUTTON_Y = (byte)0x80;
+        byte XBOX_BUTTON_A = (byte)0x10;
+        byte XBOX_BUTTON_B = (byte)0x20;
+        byte XBOX_BUTTON_LBUMPER = (byte)0x01;
+        byte XBOX_BUTTON_RBUMPER = (byte)0x02;
+        byte XBOX_BUTTON_CENTER = (byte)0x04;
+        
+        //byte 2
+        byte XBOX_BUTTON_BACK = (byte)0x20;
+        byte XBOX_BUTTON_START = (byte)0x10;
+        byte XBOX_BUTTON_DLEFT = (byte)0x04;
+        byte XBOX_BUTTON_DRIGHT = (byte)0x08;
+        byte XBOX_BUTTON_DDOWN = (byte)0x02;
+        byte XBOX_BUTTON_DUP = (byte)0x01;
+        byte XBOX_BUTTON_LEFTCLICK = (byte)0x40;
+        byte XBOX_BUTTON_RIGHTCLICK = (byte)0x80;
+        
+        //byte 4 XBOX_BUTTON_LEFT_TRIGGER
+        //byte 5 XBOX_BUTTON_RIGHT_TRIGGER
+        
+        ByteBuffer bb = ByteBuffer.allocate(2);
+        bb.order(ByteOrder.LITTLE_ENDIAN);
+        
+        
+        bb.put(in_data.get(6));
+        bb.put(in_data.get(7));
+        thumbleft_x             =    bb.getShort(0);
+        
+        bb.clear();
+        bb.put(in_data.get(8));
+        bb.put(in_data.get(9));
+        thumbleft_y             =   bb.getShort(0);
+        
+        bb.clear();
+        bb.put(in_data.get(10));
+        bb.put(in_data.get(11));
+        thumbright_x            =   bb.getShort(0);
+        
+        bb.clear();
+        bb.put(in_data.get(12));
+        bb.put(in_data.get(13));
+        thumbright_y            =   bb.getShort(0);
+        
+        this.button_a           =   in_data.get(3)&XBOX_BUTTON_A&0xff;
+        this.button_b           =   in_data.get(3)&XBOX_BUTTON_B&0xff;
+        this.button_x           =   in_data.get(3)&XBOX_BUTTON_X&0xff;
+        this.button_y           =   in_data.get(3)&XBOX_BUTTON_Y&0xff;
+        this.button_left1       =   in_data.get(3)&XBOX_BUTTON_LBUMPER&0xff;
+        this.button_right1      =   in_data.get(3)&XBOX_BUTTON_RBUMPER&0xff;
+        
+        this.button_leftthumb   =   in_data.get(2)&XBOX_BUTTON_LEFTCLICK&0xff;
+        this.button_rightthumb  =   in_data.get(2)&XBOX_BUTTON_RIGHTCLICK&0xff;
+        this.dpad               =   in_data.get(2)&0x0f;
+    }
+    private void updateBBCData(ByteBuffer in_data)
+    {
         //5 and 6 x y for right thumb
         //byte 2 d pad
         //byte 0 and 1 buttons
@@ -218,7 +322,6 @@ public class ControllerData {
         if(button_rightthumb_previous>0 && button_rightthumb==0)button_rightthumb_pressed = true;
         
         dpad                =   in_data.get(2)&0xff;
-        
     }
     public boolean isButton_x_pressed() {
         if(button_x_pressed)
@@ -366,21 +469,57 @@ public class ControllerData {
     }
     public byte[] getAnalogMessage()
     {
-        byte[] analog_msg = new byte[6];
+        byte[] analog_msg;
+        switch(this.controller_type)
+        {
+            case ControllerData.BBC_TYPE:
+                analog_msg = new byte[6];
+                //first byte type
+                analog_msg[0] = SeaPIMainFrame.SEAPI_MSGTYPE_ANALOG_CTL;
+                //0 is left stick x
+                //1 is left stick y
+                //2 is right stick x
+                //3 is right stick y
+                //4 is dpad
+               // System.out.println("Thumb Left: "+String.valueOf(this.getThumbleft_x())+" "+String.valueOf(this.getThumbleft_y()));
+                analog_msg[1] = (byte)this.getThumbleft_x();
+                analog_msg[2] = (byte)this.getThumbleft_y();
+                analog_msg[3] = (byte)this.getThumbright_x();
+                analog_msg[4] = (byte)this.getThumbright_y();
+                analog_msg[5] = (byte)this.getDpad();
+                break;
+            case ControllerData.XBOX_TYPE:
+                analog_msg = new byte[11];
+                //first byte type
+                analog_msg[0] = SeaPIMainFrame.SEAPI_MSGTYPE_ANALOG_CTL;
+                analog_msg[1] = (byte)this.controller_type;
+                //1/2 is left stick x
+                //3/4 is left stick y
+                //5/6 is right stick x
+                //7/8 is right stick y
+                //9 is dpad
+                //System.out.println("Thumb Left: "+String.valueOf(this.getThumbleft_x())+" "+String.valueOf(this.getThumbleft_y()));
+                
+                
+                analog_msg[2] = (byte)(this.getThumbleft_x() & 0xff);
+                analog_msg[3] = (byte)((this.getThumbleft_x() >> 8) & 0xff);
+                
+                analog_msg[4] = (byte)(this.getThumbleft_y() & 0xff);
+                analog_msg[5] = (byte)((this.getThumbleft_y() >> 8) & 0xff);
+                
+                analog_msg[6] = (byte)(this.getThumbright_x() & 0xff);
+                analog_msg[7] = (byte)((this.getThumbright_x() >> 8) & 0xff);
+                
+                analog_msg[8] = (byte)(this.getThumbright_y() & 0xff);
+                analog_msg[9] = (byte)((this.getThumbright_y() >> 8) & 0xff);
+                
+                analog_msg[10] = (byte)this.getDpad();
+                break;
+            default:
+                analog_msg = null;
+        }
         
-        //first byte type
-        analog_msg[0] = SeaPIMainFrame.SEAPI_MSGTYPE_ANALOG_CTL;
-        //0 is left stick x
-        //1 is left stick y
-        //2 is right stick x
-        //3 is right stick y
-        //4 is dpad
-        System.out.println("Thumb: "+String.valueOf(this.getThumbleft_x()));
-        analog_msg[1] = (byte)this.getThumbleft_x();
-        analog_msg[2] = (byte)this.getThumbleft_y();
-        analog_msg[3] = (byte)this.getThumbright_x();
-        analog_msg[4] = (byte)this.getThumbright_y();
-        analog_msg[5] = (byte)this.getDpad();
+        
         
         return analog_msg;
     }
