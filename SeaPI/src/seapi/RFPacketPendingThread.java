@@ -27,7 +27,7 @@ public class RFPacketPendingThread extends Thread {
      */
     public void abort()
     {
-        System.out.println("Aborting Thread....");
+        //System.out.println("Aborting Thread....");
         this.abort = true;
     }
     @Override
@@ -35,7 +35,7 @@ public class RFPacketPendingThread extends Thread {
     {
         this.abort = false;
         //Check SPI for valid pkt rcvd
-        System.out.println("Starting Thread....");
+        //System.out.println("Starting Thread....");
         boolean packet_rcvd = false;
         byte packet[] = new byte[2];
         
@@ -45,7 +45,7 @@ public class RFPacketPendingThread extends Thread {
         if((packet[1]&04)!=4 )
         {
             //not in rx mode....
-            System.out.println("Not in Rx Mode!!");
+            //System.out.println("Not in Rx Mode!!");
             
         }
 
@@ -75,7 +75,7 @@ public class RFPacketPendingThread extends Thread {
                 }
             }
         }
-        System.out.println("Thread out of loop....");
+        //System.out.println("Thread out of loop....");
         
     }
     

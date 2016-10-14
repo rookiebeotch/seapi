@@ -17,31 +17,34 @@ public class ControllerData {
     public static final int     XBOX_TYPE  = 100;
     public static final int     BBC_TYPE   = 101;
     private int    controller_type;
-    public int     button_x;
+    public volatile int     button_x;
     public int     button_x_previous;
-    public int     button_y;
+    public volatile int     button_y;
     public int     button_y_previous;
-    public int     button_a;
+    public volatile int     button_a;
     public int     button_a_previous;
-    public int     button_b;
+    public volatile int     button_b;
     public int     button_b_previous;
-    public int     button_start;
+    public volatile int     button_start;
     public int     button_start_previous;
-    public int     button_select;
+    public volatile int     button_select;
     public int     button_select_previous;
-    public int     button_left1;
+    public volatile int     button_left1;
     public int     button_left1_previous;
-    public int     button_right1;
+    public volatile int     button_right1;
     public int     button_right1_previous;
-    public int     button_leftthumb;
+    public volatile int     button_leftthumb;
     public int     button_leftthumb_previous;
-    public int     button_rightthumb;
+    public volatile int     button_rightthumb;
     public int     button_rightthumb_previous;
-    public int     thumbleft_x;
-    public int     thumbleft_y;
-    public int     thumbright_x;
-    public int     thumbright_y;
-    public int     dpad;
+    public volatile int     thumbleft_x;
+    public volatile int     thumbleft_y;
+    public volatile int     thumbright_x;
+    public volatile int     thumbright_y;
+    public volatile int     dpad;
+    
+    private volatile int    left_trigger;
+    private volatile int    right_trigger;
     
     private boolean button_x_pressed;
 
@@ -56,16 +59,16 @@ public class ControllerData {
     private boolean button_leftthumb_pressed;
     private boolean button_rightthumb_pressed;
     //Masks
-    private int     MASK_X_BUTTON    = 0x08;
-    private int     MASK_Y_BUTTON    = 0x10;
-    private int     MASK_A_BUTTON    = 0x01;
-    private int     MASK_B_BUTTON    = 0x02;
-    private int     MASK_START_BUTTON    = 0x08;
-    private int     MASK_SELECT_BUTTON    = 0x04;
-    private int     MASK_L1_BUTTON    = 0x40;
-    private int     MASK_R1_BUTTON    = 0x80;
-    private int     MASK_LB_BUTTON    = 0x20;
-    private int     MASK_RB_BUTTON    = 0x40;
+    private int     BBC_MASK_X_BUTTON    = 0x08;
+    private int     BBC_MASK_Y_BUTTON    = 0x10;
+    private int     BBC_MASK_A_BUTTON    = 0x01;
+    private int     BBC_MASK_B_BUTTON    = 0x02;
+    private int     BBC_MASK_START_BUTTON    = 0x08;
+    private int     BBC_MASK_SELECT_BUTTON    = 0x04;
+    private int     BBC_MASK_L1_BUTTON    = 0x40;
+    private int     BBC_MASK_R1_BUTTON    = 0x80;
+    private int     BBC_MASK_LB_BUTTON    = 0x20;
+    private int     BBC_MASK_RB_BUTTON    = 0x40;
     
     ControllerData()
     {
@@ -95,6 +98,8 @@ public class ControllerData {
         thumbright_x        =   128;
         thumbright_y        =   128;
         dpad                =   0;
+        left_trigger        =   0;
+        right_trigger        =   0;
     }
     public void setControllerType(int x)
     {
@@ -176,7 +181,12 @@ public class ControllerData {
     public int getDpad() {
         return dpad;
     }
-    
+    public int getLeftTrigger() {
+        return left_trigger;
+    }
+    public int getRightTrigger() {
+        return right_trigger;
+    }
     public void updateData(ByteBuffer in_data)
     {
         if(in_data==null)
@@ -256,6 +266,11 @@ public class ControllerData {
         this.button_leftthumb   =   in_data.get(2)&XBOX_BUTTON_LEFTCLICK&0xff;
         this.button_rightthumb  =   in_data.get(2)&XBOX_BUTTON_RIGHTCLICK&0xff;
         this.dpad               =   in_data.get(2)&0x0f;
+        this.button_start       =   in_data.get(2)&XBOX_BUTTON_START&0xff;
+        this.button_select      =   in_data.get(2)&XBOX_BUTTON_BACK&0xff;
+        
+        this.left_trigger       =   in_data.get(4);
+        this.right_trigger      =   in_data.get(5);
     }
     private void updateBBCData(ByteBuffer in_data)
     {
@@ -281,44 +296,44 @@ public class ControllerData {
         thumbright_y        =   in_data.get(6)& 0x00ff;
         
         button_x_previous   = button_x;
-        button_x            =   in_data.get(0)&MASK_X_BUTTON&0xff;
+        button_x            =   in_data.get(0)&BBC_MASK_X_BUTTON&0xff;
         if(button_x_previous>0 && button_x==0)button_x_pressed = true;
             
         
         button_y_previous = button_y;
-        button_y            =   in_data.get(0)&MASK_Y_BUTTON&0xff;
+        button_y            =   in_data.get(0)&BBC_MASK_Y_BUTTON&0xff;
         if(button_y_previous>0 && button_y==0)button_y_pressed = true;
         
         button_a_previous = button_a;
-        button_a            =   in_data.get(0)&MASK_A_BUTTON&0xff;
+        button_a            =   in_data.get(0)&BBC_MASK_A_BUTTON&0xff;
         if(button_a_previous>0 && button_a==0)button_a_pressed = true;
         
         button_b_previous = button_b;
-        button_b            =   in_data.get(0)&MASK_B_BUTTON&0xff;
+        button_b            =   in_data.get(0)&BBC_MASK_B_BUTTON&0xff;
         if(button_b_previous>0 && button_b==0)button_b_pressed = true;
         
         button_left1_previous = button_left1;
-        button_left1        =   in_data.get(0)&MASK_L1_BUTTON&0xff;
+        button_left1        =   in_data.get(0)&BBC_MASK_L1_BUTTON&0xff;
         if(button_left1_previous>0 && button_left1==0)button_left1_pressed = true;
         
         button_right1_previous = button_right1;
-        button_right1       =   in_data.get(0)&MASK_R1_BUTTON&0xff;
+        button_right1       =   in_data.get(0)&BBC_MASK_R1_BUTTON&0xff;
         if(button_right1_previous>0 && button_right1==0)button_right1_pressed = true;
         
         button_start_previous = button_start;
-        button_start        =   in_data.get(1)&MASK_START_BUTTON&0xff;
+        button_start        =   in_data.get(1)&BBC_MASK_START_BUTTON&0xff;
         if(button_start_previous>0 && button_start==0)button_start_pressed = true;
         
         button_select_previous = button_select;
-        button_select       =   in_data.get(1)&MASK_SELECT_BUTTON&0xff;
+        button_select       =   in_data.get(1)&BBC_MASK_SELECT_BUTTON&0xff;
         if(button_select_previous>0 && button_select==0)button_select_pressed = true;
         
         button_leftthumb_previous = button_leftthumb;
-        button_leftthumb    =   in_data.get(1)&MASK_LB_BUTTON&0xff;
+        button_leftthumb    =   in_data.get(1)&BBC_MASK_LB_BUTTON&0xff;
         if(button_leftthumb_previous>0 && button_leftthumb==0)button_leftthumb_pressed = true;
         
         button_rightthumb_previous = button_rightthumb;
-        button_rightthumb   =   in_data.get(1)&MASK_RB_BUTTON&0xff;
+        button_rightthumb   =   in_data.get(1)&BBC_MASK_RB_BUTTON&0xff;
         if(button_rightthumb_previous>0 && button_rightthumb==0)button_rightthumb_pressed = true;
         
         dpad                =   in_data.get(2)&0xff;
@@ -489,15 +504,17 @@ public class ControllerData {
                 analog_msg[5] = (byte)this.getDpad();
                 break;
             case ControllerData.XBOX_TYPE:
-                analog_msg = new byte[11];
+                analog_msg = new byte[13];
                 //first byte type
                 analog_msg[0] = SeaPIMainFrame.SEAPI_MSGTYPE_ANALOG_CTL;
                 analog_msg[1] = (byte)this.controller_type;
-                //1/2 is left stick x
-                //3/4 is left stick y
-                //5/6 is right stick x
-                //7/8 is right stick y
-                //9 is dpad
+                //2/3 is left stick x
+                //4/5 is left stick y
+                //6/7 is right stick x
+                //8/9 is right stick y
+                //10 is dpad
+                //11 is left trigger
+                //12 is right trigger
                 //System.out.println("Thumb Left: "+String.valueOf(this.getThumbleft_x())+" "+String.valueOf(this.getThumbleft_y()));
                 
                 
@@ -514,6 +531,11 @@ public class ControllerData {
                 analog_msg[9] = (byte)((this.getThumbright_y() >> 8) & 0xff);
                 
                 analog_msg[10] = (byte)this.getDpad();
+                
+                analog_msg[11] = (byte)this.getLeftTrigger();
+                analog_msg[12] = (byte)this.getRightTrigger();
+                
+                
                 break;
             default:
                 analog_msg = null;

@@ -38,7 +38,7 @@ public class StateMachineController {
     final static int        SEAPI_EVENT_BUTTON_PRESSED  =   2000;
     
     //vars
-    private SeaPIMainFrame mainPtr;
+    private volatile SeaPIMainFrame mainPtr;
     private int current_state;
     private ControllerData  myControlData;
     private Timer           control_data_timer;
@@ -55,10 +55,10 @@ public class StateMachineController {
         //clear any counters
         pendingTransmitBytes = new ArrayList();
         
-        control_data_timer = new Timer(500,new StateMachineTimerControlDataListener(this));
+        control_data_timer = new Timer(100,new StateMachineTimerControlDataListener(this));
         control_data_timer.setRepeats(false);
         
-        rcvExpiredTimer = new Timer(500,new StateMachineTimerRcvWaitListener(this));
+        rcvExpiredTimer = new Timer(100,new StateMachineTimerRcvWaitListener(this));
         rcvExpiredTimer.setRepeats(false);
         Thread a = new Thread();
         rcvPktThread = new RFPacketPendingThread(this);
@@ -142,7 +142,7 @@ public class StateMachineController {
     
     public  int state_init(int event,int current_state)
     {
-        System.out.println("DEBUG: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        //System.out.println("DEBUG: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
         int next_state = current_state;
         
         switch(event)
@@ -166,7 +166,7 @@ public class StateMachineController {
     }
     public  int state_init_vehicle(int event,int current_state)
     {
-        System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        //System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
         int next_state = current_state;
         
         switch(event)
@@ -184,7 +184,7 @@ public class StateMachineController {
     }
     public  int state_tx(int event,int current_state)
     {
-        System.out.println("DEBUG: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        //System.out.println("DEBUG: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
         int next_state = current_state;
         
         switch(event)
@@ -198,7 +198,7 @@ public class StateMachineController {
     }
     public  int state_tx_vehicle(int event,int current_state)
     {
-        System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        //System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
         int next_state = current_state;
         
         switch(event)
@@ -245,9 +245,9 @@ public class StateMachineController {
     }
     public  int state_rx_vehicle(int event,int current_state)
     {
-        DateFormat df = new SimpleDateFormat("HH:mm:ss");
-        Date today = Calendar.getInstance().getTime(); 
-        System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        //DateFormat df = new SimpleDateFormat("HH:mm:ss");
+        //Date today = Calendar.getInstance().getTime(); 
+        //System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
         int next_state = current_state;
         
         switch(event)
@@ -262,6 +262,7 @@ public class StateMachineController {
             case SEAPI_EVENT_PKT_RCV:
                 //kill thread if running
                 this.rcvPktThread.abort();
+                
                 //get packet
                 byte[] data = this.rcvMessage();
                 if(data!=null)
@@ -274,15 +275,17 @@ public class StateMachineController {
                     Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
                     int rssi = packet[1];
                     
-                    System.out.println(df.format(today)+" RSSI "+String.valueOf(rssi)+" Msg: "+Arrays.toString(data));
+                    //System.out.println(df.format(today)+" RSSI "+String.valueOf(rssi)+" Msg: "+Arrays.toString(data));
                     //what do we do do with rcvd msg????
                     mainPtr.processMsg(data);
+                    //send any data
+                    this.sendBufferedPacket();
                 }
                 
-                //send any data
-                this.sendBufferedPacket();
+                
                 next_state = SEAPI_STATE_RX;
-                this.rcvPktThread.run();
+                rcvPktThread = new RFPacketPendingThread(this);
+                this.rcvPktThread.start();
                 break;
             default:
                 //do nada!!!
@@ -292,7 +295,7 @@ public class StateMachineController {
     }
     public  int state_idle(int event,int current_state)
     {
-        System.out.println("DEBUG: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        //System.out.println("DEBUG: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
         int next_state = current_state;
         
         switch(event)
@@ -324,7 +327,7 @@ public class StateMachineController {
     }
     public  int state_idle_vehicle(int event,int current_state)
     {
-        System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
+        //System.out.println("DEBUG vehicle: Got EVENT: "+String.valueOf(event)+" State: "+stateToString(current_state));
         int next_state = current_state;
         
         switch(event)
@@ -349,7 +352,7 @@ public class StateMachineController {
     private int sendBufferedPacket()
     {
         byte[] tempbytes;
-        System.out.println("Msgs in queue: "+String.valueOf(pendingTransmitBytes.size()));
+        //System.out.println("Msgs in queue: "+String.valueOf(pendingTransmitBytes.size()));
         if(pendingTransmitBytes.size()>0)
         {
             tempbytes = this.pendingTransmitBytes.remove(0);
@@ -367,10 +370,10 @@ public class StateMachineController {
     private int txMessage(byte[] msgbytes)
     {
         byte packet[] = new byte[2];
-        DateFormat df = new SimpleDateFormat("HH:mm:ss");
-        Date today = Calendar.getInstance().getTime(); 
+        //DateFormat df = new SimpleDateFormat("HH:mm:ss");
+        //Date today = Calendar.getInstance().getTime(); 
         
-        System.out.println(df.format(today)+" Sending: "+Arrays.toString(msgbytes));
+        //System.out.println(df.format(today)+" Sending: "+Arrays.toString(msgbytes));
         //set to tx off
         packet[0] = (byte)(0x07|SPI_WRITE_CMD);
         packet[1] = (byte)0x03;//tx off,rx off, pll on xton
@@ -381,11 +384,11 @@ public class StateMachineController {
         //Done by just reading them
         packet[0]   =   (byte)(0x03|SPI_READ_CMD);
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        System.out.println("Reg 3: "+Arrays.toString(packet));
+        //System.out.println("Reg 3: "+Arrays.toString(packet));
         
         packet[0]   =   (byte)(0x04|SPI_READ_CMD);
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        System.out.println("Reg 4: "+Arrays.toString(packet));
+        //System.out.println("Reg 4: "+Arrays.toString(packet));
         //System.out.println("Before Reg 3: "+Arrays.toString(packet));
         
         //clear tx fifo and errors
@@ -440,7 +443,7 @@ public class StateMachineController {
             Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
             byte result = (byte)(0x04&packet[1]);
             
-            System.out.println("Reg 3: "+Arrays.toString(packet));
+            //System.out.println("Reg 3: "+Arrays.toString(packet));
     
             if(result!=4)
             {

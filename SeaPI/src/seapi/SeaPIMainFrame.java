@@ -1571,9 +1571,9 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                  gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_03, "not used");
                  gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_04, "Servo 1");
                  gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_05, "Servo 2");
-                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_06, "not used");
-                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_07, "not used");
-                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_08, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_06, "Servo 3");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_07, "Servo 4");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_08, "Servo 5");
                  gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_09, "not used");
                  gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_10, "not used");
                  gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_11, "not used");
@@ -1693,21 +1693,33 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         //950  right
 
         if(SEAPI_MIN_SERVO_POS_MSEC>position)position=SEAPI_MIN_SERVO_POS_MSEC;
-       // if(SEAPI_MAX_SERVO_POS_MSEC<position)position=SEAPI_MAX_SERVO_POS_MSEC;
+        if(SEAPI_MAX_SERVO_POS_MSEC<position)position=SEAPI_MAX_SERVO_POS_MSEC;
         
         
         //The value fed to setPWM is millisecond duration
         switch(servo_number){
             case 1:
-                log.info("Servo 1 (4) Moving ..."+String.valueOf(position));
+                //log.info("Servo 1 (4) Moving ..."+String.valueOf(position));
                 gpioProvider.setPwm(PCA9685Pin.PWM_04, position);
                 break;
             case 2:
-                log.info("Servo 2 (5) Moving ..."+String.valueOf(position));
+                //log.info("Servo 2 (5) Moving ..."+String.valueOf(position));
                 gpioProvider.setPwm(PCA9685Pin.PWM_05, position);
                 break;    
+            case 3:
+                //log.info("Servo 3 (6) Moving ..."+String.valueOf(position));
+                gpioProvider.setPwm(PCA9685Pin.PWM_06, position);
+                break;
+            case 4:
+                //log.info("Servo 4 (7) Moving ..."+String.valueOf(position));
+                gpioProvider.setPwm(PCA9685Pin.PWM_07, position);
+                break;   
+            case 5:
+                //log.info("Servo 5 (8) Moving ..."+String.valueOf(position));
+                gpioProvider.setPwm(PCA9685Pin.PWM_08, position);
+                break;   
             default:
-                log.fine("Servo not defined...");
+                //log.fine("Servo not defined...");
                 break;
         }
         
@@ -1742,14 +1754,19 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     public void processMsg(byte[] msg)
     {
         
-        int left_x;
-        int left_y;
+        int left_x=0,left_y=0;
+        int right_x=0,right_y=0;
+        int dpad=0;
+        int lefttrigger=0,righttrigger=0;
+        
+        
+        
         if(msg.length<1)
         {
             //emtpy msg....
             return;
         }
-        log.fine("Processing Msg Type: "+String.valueOf(msg[1]));
+        //log.fine("Processing Msg Type: "+String.valueOf(msg[1]));
         //first byte is msg type
         int msgtype = msg[1];
         int datalength = msg.length-1;
@@ -1799,21 +1816,60 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
 
                         break;
                     case ControllerData.XBOX_TYPE:
-                        ByteBuffer bb = ByteBuffer.allocate(2);
-                        bb.order(ByteOrder.LITTLE_ENDIAN);
                         
-                        bb.put(msg[3]);
-                        bb.put(msg[4]);
-                        left_x = (int)bb.getShort(0);
+                        ByteBuffer bb;
+                        try{
+                            bb = ByteBuffer.allocate(2);
+                            bb.order(ByteOrder.LITTLE_ENDIAN);
+                            //get left stick x
+                            bb.put((byte)msg[3]);
+                            bb.put((byte)msg[4]);
+                            left_x = (int)bb.getShort(0);
+
+                            //get left stick y
+                            bb.clear();
+                            bb.put((byte)msg[5]);
+                            bb.put((byte)msg[6]);
+                            left_y = (int)bb.getShort(0);
+
+                            //get right stick x
+                            bb.clear();
+                            bb.put((byte)msg[7]);
+                            bb.put((byte)msg[8]);
+                            right_x = (int)bb.getShort(0);
+                            //get right stick y
+                            bb.clear();
+                            bb.put((byte)msg[9]);
+                            bb.put((byte)msg[10]);
+                            right_y = (int)bb.getShort(0);
+                        }
+                        catch(Exception e)
+                        {
+                            System.out.println(e.getMessage());
+                        }
                         
-                        commandServo(1,(int)(left_x/36)+1850);
+
                         
-                        bb.clear();
-                        bb.put(msg[5]);
-                        bb.put(msg[6]);
-                        left_y = (int)bb.getShort(0);
-                        commandServo(2,(int)(left_y/36)+1850);
                         
+                        //get dpad
+                        dpad = (int)msg[11];
+                        //get left trigger
+                        lefttrigger = (int)msg[12]&0xff;
+                        //get right trigger
+                        righttrigger = (int)msg[13]&0xff;
+                        
+                        
+                        try{
+                            commandServo(1,(int)(left_x/36)+1850);
+                            commandServo(2,(int)(left_y/36)+1850);
+                            commandServo(3,(int)(right_x/36)+1850);
+                            commandServo(4,(int)(right_y/36)+1850);
+                            commandServo(5,(int)(7*lefttrigger+950));
+                        }
+                        catch(Exception e)
+                        {
+                            System.out.println(e.getMessage());
+                        }
                         
                         break;
                     default:

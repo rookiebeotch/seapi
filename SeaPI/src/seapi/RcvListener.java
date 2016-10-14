@@ -48,7 +48,7 @@ public class RcvListener implements ActionListener {
         
         if((packet[1]&0x02)==2)
         {
-            mainPtr.log.fine("Packet Valid!!");
+            
             //packet to process
             //get length of msg
             packet[0] = (byte)0x4b;
@@ -81,7 +81,7 @@ public class RcvListener implements ActionListener {
             packet[0]   =   (byte)(0x07|mainPtr.SPI_WRITE_CMD);
             packet[1]   =   (byte) 0x07;
             Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-            mainPtr.log.fine("Back to RX Mode...");
+            
         }
         else
         {
