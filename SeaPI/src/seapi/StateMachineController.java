@@ -15,7 +15,7 @@ import java.util.Date;
 import java.util.List;
 import static seapi.SeaPIMainFrame.SPI_WRITE_CMD;
 import static seapi.SeaPIMainFrame.log;
-import javax.swing.Timer;
+import java.util.Timer;
 import static seapi.SeaPIMainFrame.SPI_READ_CMD;
 /**
  *
@@ -27,6 +27,7 @@ public class StateMachineController {
     final static int        SEAPI_STATE_TX      =   101;
     final static int        SEAPI_STATE_RX      =   102;
     final static int        SEAPI_STATE_IDLE    =   103;
+    final static int        SEAPI_STATE_EXIT    =   110;
     
     //events
     final static int        SEAPI_EVENT_PKT_RCV     =   1000;
@@ -38,7 +39,8 @@ public class StateMachineController {
     final static int        SEAPI_EVENT_BUTTON_PRESSED  =   2000;
     
     //vars
-    private volatile SeaPIMainFrame mainPtr;
+    //private volatile SeaPIMainFrame mainPtr;
+    private volatile SeaPI mainPtr;
     private int current_state;
     private ControllerData  myControlData;
     private Timer           control_data_timer;
@@ -46,7 +48,8 @@ public class StateMachineController {
     List<byte[]>            pendingTransmitBytes;
     private int             control_mode;
     private RFPacketPendingThread   rcvPktThread;
-    StateMachineController(int mode,ControllerData in_dataCntlr,SeaPIMainFrame mptr){
+    //StateMachineController(int mode,ControllerData in_dataCntlr,SeaPIMainFrame mptr){
+      StateMachineController(int mode,ControllerData in_dataCntlr,SeaPI mptr){
         mainPtr = mptr;
         control_mode = mode;
         current_state   =   SEAPI_STATE_INIT;
@@ -55,13 +58,17 @@ public class StateMachineController {
         //clear any counters
         pendingTransmitBytes = new ArrayList();
         
-        control_data_timer = new Timer(100,new StateMachineTimerControlDataListener(this));
-        control_data_timer.setRepeats(false);
-        
-        rcvExpiredTimer = new Timer(100,new StateMachineTimerRcvWaitListener(this));
-        rcvExpiredTimer.setRepeats(false);
+        //schedule tasks as needed
+        control_data_timer = new Timer();
+        rcvExpiredTimer = new Timer();
+
+       
         Thread a = new Thread();
         rcvPktThread = new RFPacketPendingThread(this);
+    }
+    public int getState()
+    {
+        return this.current_state;
     }
     private String stateToString(int state)
     {
@@ -80,15 +87,15 @@ public class StateMachineController {
             case SEAPI_STATE_RX:
                 statestr="RX";
                 break;
+            case SEAPI_STATE_EXIT:
+                statestr="EXIT";
+                break;
             default:
                 statestr="unknown";
         }
         return statestr;
     }
-    public void setControlDataTimer(Timer in_timer)
-    {
-        this.control_data_timer = in_timer;
-    }
+    
     public void processEvent(int event)
     {
         
@@ -150,12 +157,13 @@ public class StateMachineController {
             case SEAPI_EVENT_INIT_DONE:
                 next_state = SEAPI_STATE_IDLE;
                 //start timer to send data
-                this.control_data_timer.restart();
+                //this.control_data_timer = new Timer();
+                control_data_timer.purge();
+                
                 break;
                 
             case SEAPI_EVENT_PKT_RCV:
-                //kill timer
-                this.rcvExpiredTimer.stop();
+                //Not sure what to do in this case...
                 next_state = SEAPI_STATE_TX;
                 break;
             default:
@@ -224,18 +232,12 @@ public class StateMachineController {
                     //get message
                     byte[] indata = rcvMessage();
                     //TODO: what do we do with incoming data???
+                    //TODO: process the pckt..
                 }
-                //Send one packet
-                sendBufferedPacket();
-                this.rcvExpiredTimer.restart();
+                control_data_timer.schedule(new ControlDataTimerTask(this),50);
+                next_state = SEAPI_STATE_IDLE;
                 break;
             case SEAPI_EVENT_TIMER_CTL:
-                
-                //Grab data from data control for analog controls
-                //grab button info
-                this.pendingTransmitBytes.add(myControlData.getAnalogMessage());
-                //this.pendingTransmitBytes.add(myControlData.getButtonMessage());
-                this.control_data_timer.restart();
                 break;
             default:
                 //do nada!!!
@@ -257,7 +259,8 @@ public class StateMachineController {
                 
                 //Grab data from data control for analog controls
                 //grab button info
-                this.control_data_timer.restart();
+                // this.control_data_timer = new Timer();
+                control_data_timer.schedule(new ControlDataTimerTask(this),100);
                 break;
             case SEAPI_EVENT_PKT_RCV:
                 //kill thread if running
@@ -278,10 +281,9 @@ public class StateMachineController {
                     //System.out.println(df.format(today)+" RSSI "+String.valueOf(rssi)+" Msg: "+Arrays.toString(data));
                     //what do we do do with rcvd msg????
                     mainPtr.processMsg(data);
-                    //send any data
-                    this.sendBufferedPacket();
+                    
                 }
-                
+                //Send any needed data here
                 
                 next_state = SEAPI_STATE_RX;
                 rcvPktThread = new RFPacketPendingThread(this);
@@ -302,21 +304,28 @@ public class StateMachineController {
         {
             case SEAPI_EVENT_START:
                 //Send one packet
-                sendBufferedPacket();
+                 sendPacket(myControlData.getAnalogMessage());
                 //set wait timer
-                this.rcvExpiredTimer.restart();
+                //rcvExpiredTimer = new Timer();
+                rcvExpiredTimer.schedule(new RcvWaitTimerTask(this),50);
                 next_state = SEAPI_STATE_RX;
                 break;
             case SEAPI_EVENT_TIMER_CTL:
+                
                 //need to send controll data
                 //Grab data from data control for analog controls
                 //grab button info
-                this.pendingTransmitBytes.add(myControlData.getAnalogMessage());
+                sendPacket(myControlData.getAnalogMessage());
+                //this.pendingTransmitBytes.add(myControlData.getAnalogMessage());
                 //this.pendingTransmitBytes.add(myControlData.getButtonMessage());
-                this.control_data_timer.restart();
+               // this.control_data_timer = new Timer();
+                //control_data_timer.schedule(new ControlDataTimerTask(this),100);
                 
-                //then go to state TX
-                next_state = SEAPI_STATE_IDLE;
+                //set the rcv timeout timer
+                rcvExpiredTimer.schedule(new RcvWaitTimerTask(this),50);
+                
+                //then go to state RX
+                next_state = SEAPI_STATE_RX;
                 break;
             
             default:
@@ -349,6 +358,26 @@ public class StateMachineController {
         
         return next_state;
     }
+    private int sendPacket(byte[] inpacket)
+    {
+        if(inpacket==null)
+            return -1;
+        //System.out.println("Msgs in queue: "+String.valueOf(pendingTransmitBytes.size()));
+        if(inpacket.length>0)
+        {
+            
+            if(inpacket.length>64)
+            {
+                System.out.println("Msg too long, deleting: "+Arrays.toString(inpacket));
+            }
+            else
+            {
+                txMessage(inpacket);
+            }
+            //System.out.println("After Msgs in queue: "+String.valueOf(pendingTransmitBytes.size()));
+        }
+        return 0;
+    }
     private int sendBufferedPacket()
     {
         byte[] tempbytes;
@@ -364,6 +393,7 @@ public class StateMachineController {
             {
                 txMessage(tempbytes);
             }
+            //System.out.println("After Msgs in queue: "+String.valueOf(pendingTransmitBytes.size()));
         }
         return 0;
     }
@@ -371,7 +401,7 @@ public class StateMachineController {
     {
         byte packet[] = new byte[2];
         //DateFormat df = new SimpleDateFormat("HH:mm:ss");
-        //Date today = Calendar.getInstance().getTime(); 
+       // Date today = Calendar.getInstance().getTime(); 
         
         //System.out.println(df.format(today)+" Sending: "+Arrays.toString(msgbytes));
         //set to tx off

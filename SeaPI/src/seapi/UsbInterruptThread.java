@@ -44,7 +44,7 @@ public class UsbInterruptThread extends Thread {
      @Override
     public void run()
     {
-        
+        int counter=0;
         while (!this.abort)
         {
             int result = 0;
@@ -86,6 +86,7 @@ public class UsbInterruptThread extends Thread {
                 
                 
             }
+            
             try{
                 Thread.sleep(100);
             }
@@ -93,6 +94,8 @@ public class UsbInterruptThread extends Thread {
             {
                 System.out.println(e.getMessage());
             }
+            System.out.println(String.valueOf(counter));
+            counter++;
         }
     }
     

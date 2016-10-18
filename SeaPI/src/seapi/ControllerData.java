@@ -189,6 +189,7 @@ public class ControllerData {
     }
     public void updateData(ByteBuffer in_data)
     {
+        //System.out.println("Updating...");
         if(in_data==null)
             return;
         

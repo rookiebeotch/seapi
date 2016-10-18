@@ -144,7 +144,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
     
 
     private volatile StateMachineController      sm;
-
+    private int         motor_pwm   =   0;
     //Msg Protocol
     //Byte1 msg type 00 to 255
     
@@ -188,7 +188,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         //Init I2C for PWM/Servo
         seaPiInit(SEAPI_MASTER_MODE);
         
-        sm = new StateMachineController(SEAPI_MASTER_MODE,this.gamepad_data,this);
+//TEMP        sm = new StateMachineController(SEAPI_MASTER_MODE,this.gamepad_data,this);
        
         sm.processEvent(StateMachineController.SEAPI_EVENT_INIT_DONE);
         sm.processEvent(StateMachineController.SEAPI_EVENT_START);
@@ -1172,10 +1172,12 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         
     }
+    
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
+    
+    public static void main2(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -1206,6 +1208,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             }
         });
     }
+    
     public int readConfigFile()
     {
        
@@ -1496,7 +1499,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
             //has Radio RFM
             this.initRFMBRegisters();
             //set up timer
-            this.rxPacketTimer = new Timer(SEAPI_RFM22B_POLL_TIME_MSEC,new RcvListener(this));
+//TEMP            this.rxPacketTimer = new Timer(SEAPI_RFM22B_POLL_TIME_MSEC,new RcvListener(this));
             rxPacketTimer.start();
             log.fine("Timer started...");
             //no PWM controller
@@ -1579,7 +1582,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                  gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_11, "not used");
                  gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_12, "not used");
                  gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_13, "not used");
-                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_14, "not used");
+                 gpio.provisionPwmOutputPin(gpioProvider, PCA9685Pin.PWM_14, "Motor");
 
 
 
@@ -1686,6 +1689,27 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         return cntlr_valid;
     }
+    public void commandMotor(byte motor_input)
+    {
+        //int current_pwm = gpioProvider.getPwm(PCA9685Pin.PWM_14);
+        
+        int i = motor_input&(byte)0x03;
+        switch(i)
+        {
+            case 1:
+                //increase motor speed
+                motor_pwm+=100;
+               
+                break;
+            case 2:
+                motor_pwm-=100;
+                break;
+            default:
+                break;
+        }
+        gpioProvider.setPwm(PCA9685Pin.PWM_14, motor_pwm);
+        
+    }
     public void commandServo(int servo_number,int position)
     {
         //2600 is far left
@@ -1756,7 +1780,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         
         int left_x=0,left_y=0;
         int right_x=0,right_y=0;
-        int dpad=0;
+        byte dpad=0;
         int lefttrigger=0,righttrigger=0;
         
         
@@ -1852,7 +1876,7 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                         
                         
                         //get dpad
-                        dpad = (int)msg[11];
+                        dpad = (byte)msg[11];
                         //get left trigger
                         lefttrigger = (int)msg[12]&0xff;
                         //get right trigger
@@ -1865,6 +1889,8 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
                             commandServo(3,(int)(right_x/36)+1850);
                             commandServo(4,(int)(right_y/36)+1850);
                             commandServo(5,(int)(7*lefttrigger+950));
+                            
+                            commandMotor(dpad);
                         }
                         catch(Exception e)
                         {

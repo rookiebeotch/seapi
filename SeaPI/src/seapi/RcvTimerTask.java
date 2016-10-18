@@ -6,25 +6,19 @@
 package seapi;
 
 import com.pi4j.wiringpi.Spi;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.util.TimerTask;
 
 /**
  *
  * @author jorge
  */
-
-public class RcvListener implements ActionListener {
-    //SeaPIMainFrame mainPtr;
+public class RcvTimerTask extends TimerTask {
     SeaPI mainPtr;
-    //RcvListener(SeaPIMainFrame mptr)
-    RcvListener(SeaPI mptr)
-    {
+    RcvTimerTask(SeaPI mptr){
         mainPtr = mptr;
     }
     @Override
-    public void actionPerformed(ActionEvent e) {
-        
+    public void run() {
         //check for packets
         byte packet[] = new byte[2];
         
