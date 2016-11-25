@@ -935,29 +935,29 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         {
             
         }
-        //1C	9A
+        //1C	89 (256kbps)
         packet[0]   =   (byte)(0x1C|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0x9A;
+        packet[1]   =   (byte) 0x89;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         //1D	40
         packet[0]   =   (byte)(0x1D|SPI_WRITE_CMD);
         packet[1]   =   (byte) 0x40;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        //20	3C
+        //20	2F
         packet[0]   =   (byte)(0x20|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0x3C;
+        packet[1]   =   (byte) 0x2F;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         //21	02
         packet[0]   =   (byte)(0x21|SPI_WRITE_CMD);
         packet[1]   =   (byte) 0x02;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        //22	22
+        //22	BB
         packet[0]   =   (byte)(0x22|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0x22;
+        packet[1]   =   (byte) 0xBB;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        //23	22
+        //23	0D
         packet[0]   =   (byte)(0x23|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0x22;
+        packet[1]   =   (byte) 0x0D;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         //24	07
         packet[0]   =   (byte)(0x24|SPI_WRITE_CMD);
@@ -967,21 +967,21 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         packet[0]   =   (byte)(0x25|SPI_WRITE_CMD);
         packet[1]   =   (byte) 0xFF;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        //2A	48
+        //2A	50
         packet[0]   =   (byte)(0x2A|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0x48;
+        packet[1]   =   (byte) 0x50;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         //2C	28
         packet[0]   =   (byte)(0x2C|SPI_WRITE_CMD);
         packet[1]   =   (byte) 0x28;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        //2D	0C
+        //2D	04
         packet[0]   =   (byte)(0x2D|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0x0C;
+        packet[1]   =   (byte) 0x04;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        //2E	28
+        //2E	27
         packet[0]   =   (byte)(0x2E|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0x28;
+        packet[1]   =   (byte) 0x27;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         // 30	CC
         packet[0]   =   (byte)(0x30|SPI_WRITE_CMD);
@@ -1078,13 +1078,13 @@ public class SeaPIMainFrame extends javax.swing.JFrame {
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         
         
-        //6E	19
+        //6E	41
         packet[0]   =   (byte)(0x6E|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0x19;
+        packet[1]   =   (byte) 0x41;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-        //6F	9A
+        //6F	89
         packet[0]   =   (byte)(0x6F|SPI_WRITE_CMD);
-        packet[1]   =   (byte) 0x9A;
+        packet[1]   =   (byte) 0x89;
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
 
         //70	0C

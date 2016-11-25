@@ -575,6 +575,18 @@ public class SeaPI implements Runnable{
         Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
         
         
+        //Set ADC for Temperature
+        //0f    00
+        packet[0]   =   (byte)(0x0f|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0x00;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        //12    E0
+        packet[0]   =   (byte)(0x12|SPI_WRITE_CMD);
+        packet[1]   =   (byte) 0xE0;
+        Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+        
+        
         //05 RFM22_REG05_VAL
         packet[0]   =   (byte)(0x05|SPI_WRITE_CMD);
         packet[1]   =   (byte) 0xff;
@@ -614,44 +626,51 @@ public class SeaPI implements Runnable{
             //we dont use PCA9685 here
             result = SeaPI.ERROR_CODE_SUCESS;
             
-            //Set up i2C for joystick reading ADC
-            try{
-                gpioProviderADC = new ADS1015GpioProvider(I2CBus.BUS_1,ADS1015GpioProvider.ADS1015_ADDRESS_0x48);
-                
-                gpioProviderADC.setProgrammableGainAmplifier(ADS1x15GpioProvider.ProgrammableGainAmplifierValue.PGA_4_096V, ADS1015Pin.ALL);
-                gpioProviderADC.setMonitorInterval(100);
-                gpioProviderADC.setEventThreshold(50, ADS1015Pin.ALL);
-                // create analog pin value change listener
-                GpioPinListenerAnalog listener = new GpioPinListenerAnalog()
-                {
-                    @Override
-                    public void handleGpioPinAnalogValueChangeEvent(GpioPinAnalogValueChangeEvent event)
-                    {
-                         System.out.println("get val...");
-                        // RAW value
-                        double value = event.getValue();
-
-                        // percentage
-                        double percent =  ((value * 100) / ADS1015GpioProvider.ADS1015_RANGE_MAX_VALUE);
-
-                        // approximate voltage ( *scaled based on PGA setting )
-                        double voltage = gpioProviderADC.getProgrammableGainAmplifier(event.getPin()).getVoltage() * (percent/100);
-
-                        // display output
-                        System.out.println(" (" + event.getPin().getName() +") : VOLTS=" + String.valueOf(voltage) + "  | PERCENT=" + String.valueOf(percent) + "% | RAW=" + value + "       ");
-                    }
-                };
-                    // create gpio controller
-                final GpioController gpiooye = GpioFactory.getInstance();
-               
-                gpiooye.provisionAnalogInputPin(gpioProvider, ADS1015Pin.INPUT_A0, "MyAnalogInput-A0").addListener(listener);
-                gpiooye.provisionAnalogInputPin(gpioProvider, ADS1015Pin.INPUT_A1, "MyAnalogInput-A1").addListener(listener);
-                
-            }
-            catch(Exception e)
+            //Disabling the ADC chip since we are using USB for now
+            boolean adc_chip_enabled = false;
+            
+            if(adc_chip_enabled == true)
             {
-                
+                //Set up i2C for joystick reading ADC
+                try{
+                    gpioProviderADC = new ADS1015GpioProvider(I2CBus.BUS_1,ADS1015GpioProvider.ADS1015_ADDRESS_0x48);
+
+                    gpioProviderADC.setProgrammableGainAmplifier(ADS1x15GpioProvider.ProgrammableGainAmplifierValue.PGA_4_096V, ADS1015Pin.ALL);
+                    gpioProviderADC.setMonitorInterval(100);
+                    gpioProviderADC.setEventThreshold(50, ADS1015Pin.ALL);
+                    // create analog pin value change listener
+                    GpioPinListenerAnalog listener = new GpioPinListenerAnalog()
+                    {
+                        @Override
+                        public void handleGpioPinAnalogValueChangeEvent(GpioPinAnalogValueChangeEvent event)
+                        {
+                             System.out.println("get val...");
+                            // RAW value
+                            double value = event.getValue();
+
+                            // percentage
+                            double percent =  ((value * 100) / ADS1015GpioProvider.ADS1015_RANGE_MAX_VALUE);
+
+                            // approximate voltage ( *scaled based on PGA setting )
+                            double voltage = gpioProviderADC.getProgrammableGainAmplifier(event.getPin()).getVoltage() * (percent/100);
+
+                            // display output
+                            System.out.println(" (" + event.getPin().getName() +") : VOLTS=" + String.valueOf(voltage) + "  | PERCENT=" + String.valueOf(percent) + "% | RAW=" + value + "       ");
+                        }
+                    };
+                        // create gpio controller
+                    final GpioController gpiooye = GpioFactory.getInstance();
+
+                    gpiooye.provisionAnalogInputPin(gpioProvider, ADS1015Pin.INPUT_A0, "MyAnalogInput-A0").addListener(listener);
+                    gpiooye.provisionAnalogInputPin(gpioProvider, ADS1015Pin.INPUT_A1, "MyAnalogInput-A1").addListener(listener);
+
+                }
+                catch(Exception e)
+                {
+
+                }
             }
+            
         }
         else
         {

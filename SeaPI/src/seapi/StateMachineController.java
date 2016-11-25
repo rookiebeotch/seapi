@@ -30,14 +30,14 @@ public class StateMachineController {
     final static int        SEAPI_STATE_EXIT    =   110;
     
     //events
-    final static int        SEAPI_EVENT_PKT_RCV     =   1000;
-    final static int        SEAPI_EVENT_TIMER_CTL   =   1001;
-    final static int        SEAPI_EVENT_INIT_DONE   =   1002;
-    final static int        SEAPI_EVENT_START       =   1003;
-    final static int        SEAPI_EVENT_RCV_EXPIRED       =   1004;
-    final static int        SEAPI_EVENT_TIMER_STATUS_DATA = 1005;
-    final static int        SEAPI_EVENT_BUTTON_PRESSED  =   2000;
-    
+    final static int        SEAPI_EVENT_PKT_RCV             =   1000;
+    final static int        SEAPI_EVENT_TIMER_CTL           =   1001;
+    final static int        SEAPI_EVENT_INIT_DONE           =   1002;
+    final static int        SEAPI_EVENT_START               =   1003;
+    final static int        SEAPI_EVENT_RCV_EXPIRED         =   1004;
+    final static int        SEAPI_EVENT_TIMER_STATUS_DATA   =   1005;
+    final static int        SEAPI_EVENT_BUTTON_PRESSED      =   2000;
+    final static int        SEAPI_EVENT_READ_TEMP           =   1006;
     //vars
     //private volatile SeaPIMainFrame mainPtr;
     private volatile SeaPI mainPtr;
@@ -45,6 +45,7 @@ public class StateMachineController {
     private ControllerData  myControlData;
     private Timer           control_data_timer;
     private Timer           rcvExpiredTimer;
+    private Timer           tempReadTimer;
     List<byte[]>            pendingTransmitBytes;
     private int             control_mode;
     private RFPacketPendingThread   rcvPktThread;
@@ -61,7 +62,7 @@ public class StateMachineController {
         //schedule tasks as needed
         control_data_timer = new Timer();
         rcvExpiredTimer = new Timer();
-
+        tempReadTimer   =   new Timer();
        
         Thread a = new Thread();
         rcvPktThread = new RFPacketPendingThread(this);
@@ -239,6 +240,20 @@ public class StateMachineController {
                 break;
             case SEAPI_EVENT_TIMER_CTL:
                 break;
+            case SEAPI_EVENT_READ_TEMP:
+                //get and display temp
+                byte[] spipacket = new byte[2];
+                spipacket[0] = (byte)(0x0f|SeaPIMainFrame.SPI_WRITE_CMD);
+                spipacket[1] = (byte) 0x80;
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, spipacket,2);
+                
+                spipacket[0] = (byte)(0x11|SeaPIMainFrame.SPI_READ_CMD);
+                spipacket[1] = (byte) 0x00;
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, spipacket,2);
+                
+                System.out.println("Temp is: "+Byte.toString(spipacket[1]));
+                tempReadTimer.schedule(new ReadTempTimerTask(this),10000);
+                break;
             default:
                 //do nada!!!
         }
@@ -308,6 +323,7 @@ public class StateMachineController {
                 //set wait timer
                 //rcvExpiredTimer = new Timer();
                 rcvExpiredTimer.schedule(new RcvWaitTimerTask(this),50);
+                this.tempReadTimer.schedule(new ReadTempTimerTask(this), 10000);
                 next_state = SEAPI_STATE_RX;
                 break;
             case SEAPI_EVENT_TIMER_CTL:
@@ -322,12 +338,25 @@ public class StateMachineController {
                 //control_data_timer.schedule(new ControlDataTimerTask(this),100);
                 
                 //set the rcv timeout timer
-                rcvExpiredTimer.schedule(new RcvWaitTimerTask(this),50);
+                rcvExpiredTimer.schedule(new RcvWaitTimerTask(this),20);
                 
                 //then go to state RX
                 next_state = SEAPI_STATE_RX;
                 break;
-            
+            case SEAPI_EVENT_READ_TEMP:
+                //get and display temp
+                byte[] spipacket = new byte[2];
+                spipacket[0] = (byte)(0x0f|SeaPIMainFrame.SPI_WRITE_CMD);
+                spipacket[1] = (byte) 0x80;
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, spipacket,2);
+                
+                spipacket[0] = (byte)(0x11|SeaPIMainFrame.SPI_READ_CMD);
+                spipacket[1] = (byte) 0x00;
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0, spipacket,2);
+                short temp = (short)((0x00ff&spipacket[1])-40);
+                System.out.println("Temp is: "+String.valueOf(temp));
+                tempReadTimer.schedule(new ReadTempTimerTask(this),10000);
+                break;
             default:
                 //do nada!!!
         }
@@ -467,33 +496,49 @@ public class StateMachineController {
          
        //Do we wait for the packet to get sent?
         try{
-            Thread.sleep(20);
+            Thread.sleep(10);
             //Check reg for valid sent
             packet[0]   =   (byte)(0x03|SPI_READ_CMD);
             Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
             byte result = (byte)(0x04&packet[1]);
             
-            //System.out.println("Reg 3: "+Arrays.toString(packet));
+            if(result!=4)
+            {
+                System.out.println("Sleeping 30msec again since no pktsent interupt...for debug");
+                Thread.sleep(10);
+                //Check reg for valid sent
+                packet[0]   =   (byte)(0x03|SPI_READ_CMD);
+                Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
+                result = (byte)(0x04&packet[1]);
+                
+            }
     
             if(result!=4)
             {
+                
+                
+                System.out.println("Reg 3 (Interrupt Status 1): "+Arrays.toString(packet));
                 //print some debug status info
                 //Dev Status
                 packet[0]   =   (byte)(0x02|SPI_READ_CMD);
                 Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-                System.out.println("Reg 2: "+Arrays.toString(packet));
+                System.out.println("Reg 2(Device Status): "+Arrays.toString(packet));
                 packet[0]   =   (byte)(0x04|SPI_READ_CMD);
                 Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-                System.out.println("Reg 4: "+Arrays.toString(packet));
+                System.out.println("Reg 4(Interrupt Status 2): "+Arrays.toString(packet));
                 packet[0]   =   (byte)(0x07|SPI_READ_CMD);
                 Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-                System.out.println("Reg 7: "+Arrays.toString(packet));
+                System.out.println("Reg 7 (Op & Fcn Ctl 1): "+Arrays.toString(packet));
                 packet[0]   =   (byte)(0x08|SPI_READ_CMD);
                 Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-                System.out.println("Reg 8: "+Arrays.toString(packet));
+                System.out.println("Reg 8 (Op & Fcn Ctl 2): "+Arrays.toString(packet));
                 packet[0]   =   (byte)(0x3E|SPI_READ_CMD);
                 Spi.wiringPiSPIDataRW(Spi.CHANNEL_0,packet,2);
-                System.out.println("Reg 3E(PktLength): "+Arrays.toString(packet));
+                System.out.println("Reg 3E (Tx Pkt Length): "+Arrays.toString(packet));
+                
+                System.out.println("(Msg Bytes Array): "+Arrays.toString(msgbytes));
+                
+                //Lets try forcing back to rxon and clearing tx fifo?
             }
             
         }catch(Exception e){
